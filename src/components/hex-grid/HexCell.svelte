@@ -17,14 +17,18 @@
     corners: Array<{ x: number; y: number }>
     radius: number
     claimedHexKeys: Set<string>
+    cornerOffset: number
+    isSelected?: boolean
+    isNewlyPlaced?: boolean
+    onSelect?: () => void
   }
 
-  let { mapHex, hexState, cx, cy, points, corners, radius, claimedHexKeys }: Props = $props()
+  let { mapHex, hexState, cx, cy, points, corners, radius, claimedHexKeys, cornerOffset, isSelected = false, isNewlyPlaced = false, onSelect }: Props = $props()
 
-  // Determine visual state
+  // Determine visual state — must be $derived to react to prop changes
   const isMountain = mapHex.terrain === TerrainType.Mountain
   const isFort = mapHex.isFort === true
-  const status = hexState?.status ?? HexStatus.Empty
+  let status = $derived(hexState?.status ?? HexStatus.Empty)
 
   // Fort status
   type FortStatus = 'uncaptured' | 'captured' | 'lost'
@@ -44,6 +48,7 @@
   })
 
   let stroke = $derived.by(() => {
+    if (isSelected) return 'var(--color-army)'
     if (status === HexStatus.Blocked) return 'var(--color-dark-force)'
     if (status === HexStatus.Claimed) return 'var(--color-hex-claimed-border)'
     if (isFort && fortStatus === 'captured') return 'var(--color-fort-captured)'
@@ -51,7 +56,11 @@
     return 'rgba(255, 255, 255, 0.1)'
   })
 
-  let strokeWidth = $derived(status === HexStatus.Blocked || status === HexStatus.Claimed || (isFort && fortStatus === 'captured') ? 2 : 1)
+  let strokeWidth = $derived(isSelected ? 3 : (status === HexStatus.Blocked || status === HexStatus.Claimed || (isFort && fortStatus === 'captured') ? 2 : 1))
+
+  let isSelectable = $derived(status === HexStatus.Claimed)
+
+  let glowFilter = $derived(isSelected ? 'url(#fortGlow)' : 'none')
   let strokeDasharray = $derived(isFort && fortStatus === 'uncaptured' ? '4,3' : 'none')
   let fillOpacity = $derived(status === HexStatus.Blocked ? 0.4 : 1)
 
@@ -61,8 +70,9 @@
 
     return hexState.numbers.map((num, i) => {
       // Position between center and mid-edge point
-      const c1 = corners[i]
-      const c2 = corners[(i + 1) % 6]
+      // cornerOffset maps our edge indices to Honeycomb.js corner pairs
+      const c1 = corners[(i + cornerOffset) % 6]
+      const c2 = corners[(i + cornerOffset + 1) % 6]
       const edgeMidX = (c1.x + c2.x) / 2
       const edgeMidY = (c1.y + c2.y) / 2
       // 65% from center toward edge midpoint
@@ -83,6 +93,8 @@
 
 <g class="hex-cell">
   <!-- Hex polygon -->
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
   <polygon
     {points}
     {fill}
@@ -90,47 +102,59 @@
     {stroke}
     stroke-width={strokeWidth}
     stroke-dasharray={strokeDasharray}
+    filter={glowFilter}
+    style="{isSelectable ? 'cursor: pointer;' : ''}{isNewlyPlaced ? ` transform-origin: ${cx}px ${cy}px; animation: hex-fill-appear 350ms ease-out` : ''}"
+    onclick={onSelect ? (e) => { e.stopPropagation(); onSelect!() } : undefined}
   />
 
   <!-- Numbers for claimed and blocked hexes -->
   {#if (status === HexStatus.Claimed || status === HexStatus.Blocked) && hexState?.numbers}
-    {#each numberPositions as pos}
-      <text
-        x={pos.x}
-        y={pos.y}
-        text-anchor="middle"
-        dominant-baseline="central"
-        fill={status === HexStatus.Blocked ? 'rgba(232,224,208,0.3)' : 'var(--color-hex-numbers)'}
-        font-family="var(--font-data)"
-        font-size="{radius * 0.35}px"
-        font-weight="500"
-      >{pos.num}</text>
-    {/each}
+    <g style={isNewlyPlaced ? 'opacity: 0; animation: hex-numbers-appear 300ms ease-out 350ms forwards' : ''}>
+      {#each numberPositions as pos}
+        <text
+          x={pos.x}
+          y={pos.y}
+          text-anchor="middle"
+          dominant-baseline="central"
+          fill={status === HexStatus.Blocked ? 'rgba(232,224,208,0.3)' : 'var(--color-hex-numbers)'}
+          font-family="var(--font-data)"
+          font-size="{radius * 0.35}px"
+          font-weight="500"
+          pointer-events="none"
+        >{pos.num}</text>
+      {/each}
+    </g>
   {/if}
 
   <!-- Terrain icon (mountain) — suppressed when blocked -->
   {#if isMountain && status !== HexStatus.Blocked}
-    <TerrainIcon
-      terrain={mapHex.terrain!}
-      {cx}
-      {cy}
-      {radius}
-      active={hasAdjacentClaimed}
-    />
+    <g pointer-events="none">
+      <TerrainIcon
+        terrain={mapHex.terrain!}
+        {cx}
+        {cy}
+        {radius}
+        active={hasAdjacentClaimed}
+      />
+    </g>
   {/if}
 
   <!-- Fort marker -->
   {#if isFort}
-    <FortMarker
-      {cx}
-      {cy}
-      {radius}
-      status={fortStatus}
-    />
+    <g pointer-events="none">
+      <FortMarker
+        {cx}
+        {cy}
+        {radius}
+        status={fortStatus}
+      />
+    </g>
   {/if}
 
   <!-- Blocked overlay -->
   {#if status === HexStatus.Blocked}
-    <BlockedOverlay {points} />
+    <g pointer-events="none">
+      <BlockedOverlay {points} />
+    </g>
   {/if}
 </g>

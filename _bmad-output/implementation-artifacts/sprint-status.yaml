@@ -43,19 +43,19 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 
 development_status:
   # Epic 1: Interactive Hex Map
-  epic-1: in-progress
+  epic-1: done
   1-1-project-scaffolding-and-design-system-foundation: done
   1-2-hex-grid-core-coordinate-system-and-map-data: done
   1-3-hex-grid-rendering-svg-map-with-visual-states: done
   epic-1-retrospective: optional
 
   # Epic 2: Roll and Claim — The Core Turn Loop
-  epic-2: backlog
-  2-1-game-state-management-and-turn-stack: backlog
-  2-2-hex-selection-and-edge-targets: backlog
-  2-3-dice-input-manual-and-digital: backlog
-  2-4-hex-placement-and-clockwise-orientation: backlog
-  2-5-army-detection-and-status-display: backlog
+  epic-2: in-progress
+  2-1-game-state-management-and-turn-stack: done
+  2-2-hex-selection-and-edge-targets: done
+  2-3-dice-input-manual-and-digital: done
+  2-4-hex-placement-and-clockwise-orientation: done
+  2-5-army-detection-and-status-display: done
   epic-2-retrospective: optional
 
   # Epic 3: Complete Game — Dark Force, Terrain & Victory
