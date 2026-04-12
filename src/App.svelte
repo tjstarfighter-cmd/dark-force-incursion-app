@@ -11,10 +11,11 @@
   import ControlStrip from './components/game/ControlStrip.svelte'
   import TurnHistory from './components/game/TurnHistory.svelte'
   import RulesReference from './components/rules/RulesReference.svelte'
+  import JournalPanel from './components/journal/JournalPanel.svelte'
   import { detectContextualRules } from './engine/rulesContext'
   import TurnSummary from './components/game/TurnSummary.svelte'
   import { CALOSANTI_MAP } from './maps/calosanti'
-  import { startGame, dispatch, undo, rewindTo, gameState, getTurnHistory, tryResumeGame } from './stores/gameStore.svelte'
+  import { startGame, dispatch, undo, rewindTo, gameState, getTurnHistory, tryResumeGame, addJournalEntry, editJournalEntry, deleteJournalEntry, getAllJournalEntries, getDraftText, setDraftText } from './stores/gameStore.svelte'
 
   const snapshot = $derived(gameState.snapshot)
   const isInitialized = $derived(gameState.isInitialized)
@@ -43,6 +44,18 @@
 
   // Rules reference state
   let showRulesReference = $state(false)
+
+  // Journal state
+  let showJournal = $state(false)
+  let isDesktop = $state(false)
+
+  // Track desktop width for persistent journal panel
+  function checkDesktop() {
+    isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024
+  }
+  if (typeof window !== 'undefined') {
+    checkDesktop()
+  }
   let previousSnapshot = $state<typeof snapshot>(null)
   const contextRuleIds = $derived(
     snapshot ? detectContextualRules(snapshot, previousSnapshot) : ['hex-placement']
@@ -137,6 +150,7 @@
     pendingSourceCoord = null
     showTurnSummary = false
     showRulesReference = false
+    showJournal = false
     hexGridRef?.clearSelection()
     undo()
   }
@@ -148,12 +162,14 @@
     showTurnSummary = false
     showTurnHistory = false
     showRulesReference = false
+    showJournal = false
     rewindTo(turnNumber)
   }
 
   function handleTurnHistoryOpen() {
     showTurnHistory = true
     showRulesReference = false
+    showJournal = false
   }
 
   function handleTurnHistoryClose() {
@@ -163,22 +179,39 @@
   function handleRulesOpen() {
     showRulesReference = true
     showTurnHistory = false
+    showJournal = false
   }
 
   function handleRulesClose() {
     showRulesReference = false
   }
 
-  // Keyboard shortcut: Ctrl+Z / Cmd+Z for undo
+  function handleJournalOpen() {
+    showJournal = true
+    showRulesReference = false
+    showTurnHistory = false
+  }
+
+  function handleJournalClose() {
+    showJournal = false
+  }
+
+  function handleSaveJournalEntry(text: string, scope: 'turn' | 'session') {
+    addJournalEntry(text, scope)
+  }
+
+  // Keyboard shortcut: Ctrl+Z / Cmd+Z for undo (skip when typing in inputs)
   function handleKeydown(e: KeyboardEvent) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'TEXTAREA' || tag === 'INPUT') return
       e.preventDefault()
       handleUndo()
     }
   }
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} onresize={checkDesktop} />
 
 {#if !isInitialized}
   <!-- Waiting for persistence check -->
@@ -209,7 +242,7 @@
     />
   {/if}
 
-  <ControlStrip {canUndo} onUndo={handleUndo} onTurnHistoryOpen={handleTurnHistoryOpen} onRulesOpen={handleRulesOpen} />
+  <ControlStrip {canUndo} onUndo={handleUndo} onTurnHistoryOpen={handleTurnHistoryOpen} onRulesOpen={handleRulesOpen} onJournalOpen={handleJournalOpen} />
 
   {#if showTurnHistory}
     <TurnHistory
@@ -224,6 +257,20 @@
     <RulesReference
       {contextRuleIds}
       onClose={handleRulesClose}
+    />
+  {/if}
+
+  {#if showJournal || isDesktop}
+    <JournalPanel
+      entries={getAllJournalEntries()}
+      currentTurn={snapshot.turnNumber}
+      draftText={getDraftText()}
+      {isDesktop}
+      onSaveEntry={handleSaveJournalEntry}
+      onEditEntry={editJournalEntry}
+      onDeleteEntry={deleteJournalEntry}
+      onDraftChange={setDraftText}
+      onClose={handleJournalClose}
     />
   {/if}
 

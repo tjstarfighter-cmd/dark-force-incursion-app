@@ -4,9 +4,10 @@
     onUndo?: () => void
     onTurnHistoryOpen?: () => void
     onRulesOpen?: () => void
+    onJournalOpen?: () => void
   }
 
-  let { canUndo = false, onUndo, onTurnHistoryOpen, onRulesOpen }: Props = $props()
+  let { canUndo = false, onUndo, onTurnHistoryOpen, onRulesOpen, onJournalOpen }: Props = $props()
 
   let longPressTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -45,7 +46,7 @@
     onpointerleave={handleUndoPointerLeave}
     onpointercancel={handleUndoPointerLeave}
   >Undo</button>
-  <button class="ctrl-btn" disabled title="Journal (Epic 5)">Journal</button>
+  <button class="ctrl-btn" title="Journal" onclick={() => onJournalOpen?.()}>Journal</button>
   <button class="ctrl-btn" title="Rules" onclick={() => onRulesOpen?.()}>Rules</button>
   <button class="ctrl-btn" disabled title="Settings">Menu</button>
 </div>

@@ -3,6 +3,7 @@ import { GameStatus } from '../types/game.types'
 import type { MapDefinition } from '../types/map.types'
 import type { HexState } from '../types/hex.types'
 import { HexStatus } from '../types/hex.types'
+import type { JournalEntry, JournalScope } from '../types/journal.types'
 import { TurnStack } from '../engine/turnStack'
 import type { TurnEntry } from '../engine/turnStack'
 import { resolveAction } from '../engine/ruleEngine'
@@ -13,6 +14,8 @@ import { saveGame, loadActiveGame, deleteActiveGame } from '../persistence/gameR
 let currentGame = $state<GameSnapshot | null>(null)
 let turnStack = $state(new TurnStack())
 let initialized = $state(false)
+let journalEntries = $state<JournalEntry[]>([])
+let draftText = $state('')
 
 export function startGame(mapDef: MapDefinition): void {
   const hexes = new Map<string, HexState>()
@@ -43,6 +46,8 @@ export function startGame(mapDef: MapDefinition): void {
   })
 
   currentGame = initialSnapshot
+  journalEntries = []
+  draftText = ''
   initialized = true
 
   // Auto-save initial state
@@ -78,7 +83,7 @@ export function dispatch(action: GameAction): { ok: boolean; reason?: string } {
 /**
  * Restore a game from persisted state.
  */
-export function restoreGame(snapshot: GameSnapshot, turnEntries: TurnEntry[]): void {
+export function restoreGame(snapshot: GameSnapshot, turnEntries: TurnEntry[], savedJournalEntries?: JournalEntry[]): void {
   turnStack = new TurnStack()
   for (const entry of turnEntries) {
     turnStack.push(entry)
@@ -89,6 +94,8 @@ export function restoreGame(snapshot: GameSnapshot, turnEntries: TurnEntry[]): v
     snapshot = { ...snapshot, status }
   }
   currentGame = snapshot
+  journalEntries = savedJournalEntries ?? []
+  draftText = ''
   initialized = true
 }
 
@@ -100,7 +107,7 @@ export async function tryResumeGame(): Promise<boolean> {
   try {
     const saved = await loadActiveGame()
     if (saved) {
-      restoreGame(saved.snapshot, saved.turnEntries)
+      restoreGame(saved.snapshot, saved.turnEntries, saved.journalEntries)
       return true
     }
   } catch (e) {
@@ -112,7 +119,7 @@ export async function tryResumeGame(): Promise<boolean> {
 
 function autoSave(): void {
   if (!currentGame) return
-  saveGame(currentGame, turnStack.getAll()).catch(e => {
+  saveGame(currentGame, turnStack.getAll(), journalEntries).catch(e => {
     console.warn('Auto-save failed:', e)
   })
 }
@@ -168,4 +175,51 @@ export function getTurnStack(): TurnStack {
 
 export function getTurnHistory() {
   return turnStack.getAll()
+}
+
+// --- Journal ---
+
+export function addJournalEntry(text: string, scope: JournalScope = 'turn'): void {
+  if (!currentGame || !text.trim()) return
+
+  const entry: JournalEntry = {
+    id: crypto.randomUUID(),
+    turnNumber: currentGame.turnNumber,
+    text: text.trim(),
+    timestamp: Date.now(),
+    scope,
+  }
+
+  journalEntries = [...journalEntries, entry]
+  draftText = ''
+  autoSave()
+}
+
+export function getAllJournalEntries(): JournalEntry[] {
+  return journalEntries
+}
+
+export function getDraftText(): string {
+  return draftText
+}
+
+export function setDraftText(text: string): void {
+  draftText = text
+}
+
+export function editJournalEntry(id: string, newText: string): void {
+  if (!newText.trim()) return
+  journalEntries = journalEntries.map(e =>
+    e.id === id ? { ...e, text: newText.trim() } : e
+  )
+  autoSave()
+}
+
+export function deleteJournalEntry(id: string): void {
+  journalEntries = journalEntries.filter(e => e.id !== id)
+  autoSave()
+}
+
+export function setJournalEntries(entries: JournalEntry[]): void {
+  journalEntries = entries
 }

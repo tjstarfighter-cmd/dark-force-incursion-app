@@ -3,6 +3,7 @@ import type { GameRecord } from './db'
 import type { GameSnapshot } from '../types/game.types'
 import { GameStatus } from '../types/game.types'
 import type { HexState } from '../types/hex.types'
+import type { JournalEntry } from '../types/journal.types'
 import type { TurnEntry } from '../engine/turnStack'
 
 /**
@@ -61,13 +62,14 @@ const ACTIVE_GAME_ID = 'active'
 /**
  * Save the current game state to IndexedDB.
  */
-export async function saveGame(snapshot: GameSnapshot, turnEntries: TurnEntry[]): Promise<void> {
+export async function saveGame(snapshot: GameSnapshot, turnEntries: TurnEntry[], journalEntries: JournalEntry[] = []): Promise<void> {
   const record: GameRecord = {
     id: ACTIVE_GAME_ID,
     mapId: snapshot.mapId,
     status: snapshot.status,
     snapshotJson: serializeSnapshot(snapshot),
     turnStackJson: serializeTurnStack(turnEntries),
+    journalEntriesJson: JSON.stringify(journalEntries),
     updatedAt: Date.now(),
   }
   await db.games.put(record)
@@ -77,7 +79,7 @@ export async function saveGame(snapshot: GameSnapshot, turnEntries: TurnEntry[])
  * Load the active game from IndexedDB.
  * Returns null if no active game exists.
  */
-export async function loadActiveGame(): Promise<{ snapshot: GameSnapshot; turnEntries: TurnEntry[] } | null> {
+export async function loadActiveGame(): Promise<{ snapshot: GameSnapshot; turnEntries: TurnEntry[]; journalEntries: JournalEntry[] } | null> {
   const record = await db.games.get(ACTIVE_GAME_ID)
   if (!record) return null
 
@@ -86,7 +88,10 @@ export async function loadActiveGame(): Promise<{ snapshot: GameSnapshot; turnEn
 
   const snapshot = deserializeSnapshot(record.snapshotJson)
   const turnEntries = deserializeTurnStack(record.turnStackJson)
-  return { snapshot, turnEntries }
+  const journalEntries: JournalEntry[] = record.journalEntriesJson
+    ? JSON.parse(record.journalEntriesJson)
+    : []
+  return { snapshot, turnEntries, journalEntries }
 }
 
 /**

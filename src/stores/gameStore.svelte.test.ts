@@ -7,7 +7,7 @@ vi.mock('../persistence/gameRepository', () => ({
   deleteActiveGame: vi.fn().mockResolvedValue(undefined),
 }))
 
-import { startGame, dispatch, undo, rewindTo, gameState, getTurnHistory, getTurnStack, restoreGame } from './gameStore.svelte'
+import { startGame, dispatch, undo, rewindTo, gameState, getTurnHistory, getTurnStack, restoreGame, addJournalEntry, editJournalEntry, deleteJournalEntry, getAllJournalEntries, getDraftText, setDraftText } from './gameStore.svelte'
 import type { MapDefinition } from '../types/map.types'
 import { GameStatus } from '../types/game.types'
 import type { GameSnapshot } from '../types/game.types'
@@ -275,6 +275,190 @@ describe('gameStore undo/rewind', () => {
       undo()
       expect(gameState.snapshot!.turnNumber).toBe(5)
       expect(gameState.snapshot!.status).toBe(GameStatus.InProgress)
+    })
+  })
+})
+
+describe('gameStore journal', () => {
+  beforeEach(() => {
+    startGame(TEST_MAP)
+  })
+
+  describe('addJournalEntry()', () => {
+    it('creates entry with correct turnNumber, scope, id, timestamp', () => {
+      addJournalEntry('First entry')
+      const entries = getAllJournalEntries()
+      expect(entries).toHaveLength(1)
+      expect(entries[0].text).toBe('First entry')
+      expect(entries[0].turnNumber).toBe(0)
+      expect(entries[0].scope).toBe('turn')
+      expect(entries[0].id).toBeTruthy()
+      expect(entries[0].timestamp).toBeGreaterThan(0)
+    })
+
+    it('trims whitespace from text', () => {
+      addJournalEntry('  padded text  ')
+      expect(getAllJournalEntries()[0].text).toBe('padded text')
+    })
+
+    it('ignores empty text', () => {
+      addJournalEntry('')
+      addJournalEntry('   ')
+      expect(getAllJournalEntries()).toHaveLength(0)
+    })
+
+    it('creates session-scoped entry', () => {
+      addJournalEntry('Session note', 'session')
+      const entries = getAllJournalEntries()
+      expect(entries[0].scope).toBe('session')
+    })
+
+    it('links entry to current turn number', () => {
+      dispatch({ type: 'placeHex', sourceCoord: { q: 0, r: 0 }, diceValue: 1 })
+      addJournalEntry('Turn 1 note')
+      expect(getAllJournalEntries()[0].turnNumber).toBe(1)
+    })
+  })
+
+  describe('getAllJournalEntries()', () => {
+    it('returns entries in insertion order', () => {
+      addJournalEntry('First')
+      addJournalEntry('Second')
+      addJournalEntry('Third')
+      const entries = getAllJournalEntries()
+      expect(entries).toHaveLength(3)
+      expect(entries[0].text).toBe('First')
+      expect(entries[1].text).toBe('Second')
+      expect(entries[2].text).toBe('Third')
+    })
+  })
+
+  describe('journal entries survive undo/rewind', () => {
+    it('entries persist after undo', () => {
+      dispatch({ type: 'placeHex', sourceCoord: { q: 0, r: 0 }, diceValue: 1 })
+      addJournalEntry('Note on turn 1')
+
+      undo()
+      expect(gameState.snapshot!.turnNumber).toBe(0)
+
+      const entries = getAllJournalEntries()
+      expect(entries).toHaveLength(1)
+      expect(entries[0].text).toBe('Note on turn 1')
+    })
+
+    it('entries persist after rewindTo', () => {
+      dispatch({ type: 'placeHex', sourceCoord: { q: 0, r: 0 }, diceValue: 1 })
+      addJournalEntry('Turn 1 note')
+      dispatch({ type: 'placeHex', sourceCoord: { q: 0, r: 0 }, diceValue: 2 })
+      addJournalEntry('Turn 2 note')
+
+      rewindTo(0)
+      const entries = getAllJournalEntries()
+      expect(entries).toHaveLength(2)
+      expect(entries[0].text).toBe('Turn 1 note')
+      expect(entries[1].text).toBe('Turn 2 note')
+    })
+  })
+
+  describe('draft text', () => {
+    it('getDraftText returns empty string initially', () => {
+      expect(getDraftText()).toBe('')
+    })
+
+    it('setDraftText persists and getDraftText retrieves', () => {
+      setDraftText('work in progress')
+      expect(getDraftText()).toBe('work in progress')
+    })
+
+    it('draft clears after addJournalEntry', () => {
+      setDraftText('about to save')
+      addJournalEntry('saved entry')
+      expect(getDraftText()).toBe('')
+    })
+
+    it('draft resets on new game', () => {
+      setDraftText('old draft')
+      startGame(TEST_MAP)
+      expect(getDraftText()).toBe('')
+    })
+  })
+
+  describe('auto-save after journal add', () => {
+    it('calls saveGame after addJournalEntry', async () => {
+      const { saveGame } = await import('../persistence/gameRepository')
+      const callsBefore = (saveGame as any).mock.calls.length
+
+      addJournalEntry('test entry')
+      expect((saveGame as any).mock.calls.length).toBeGreaterThan(callsBefore)
+    })
+  })
+
+  describe('editJournalEntry()', () => {
+    it('updates text while preserving id and turnNumber', () => {
+      addJournalEntry('original text')
+      const entry = getAllJournalEntries()[0]
+
+      editJournalEntry(entry.id, 'updated text')
+
+      const updated = getAllJournalEntries()[0]
+      expect(updated.text).toBe('updated text')
+      expect(updated.id).toBe(entry.id)
+      expect(updated.turnNumber).toBe(entry.turnNumber)
+      expect(updated.scope).toBe(entry.scope)
+    })
+
+    it('trims whitespace from new text', () => {
+      addJournalEntry('original')
+      const id = getAllJournalEntries()[0].id
+
+      editJournalEntry(id, '  trimmed  ')
+      expect(getAllJournalEntries()[0].text).toBe('trimmed')
+    })
+
+    it('ignores empty text', () => {
+      addJournalEntry('original')
+      const id = getAllJournalEntries()[0].id
+
+      editJournalEntry(id, '   ')
+      expect(getAllJournalEntries()[0].text).toBe('original')
+    })
+
+    it('triggers autoSave', async () => {
+      const { saveGame } = await import('../persistence/gameRepository')
+      addJournalEntry('entry')
+      const callsBefore = (saveGame as any).mock.calls.length
+
+      editJournalEntry(getAllJournalEntries()[0].id, 'edited')
+      expect((saveGame as any).mock.calls.length).toBeGreaterThan(callsBefore)
+    })
+  })
+
+  describe('deleteJournalEntry()', () => {
+    it('removes entry by id', () => {
+      addJournalEntry('first')
+      addJournalEntry('second')
+      const id = getAllJournalEntries()[0].id
+
+      deleteJournalEntry(id)
+
+      const remaining = getAllJournalEntries()
+      expect(remaining).toHaveLength(1)
+      expect(remaining[0].text).toBe('second')
+    })
+
+    it('triggers autoSave', async () => {
+      const { saveGame } = await import('../persistence/gameRepository')
+      addJournalEntry('entry')
+      const callsBefore = (saveGame as any).mock.calls.length
+
+      deleteJournalEntry(getAllJournalEntries()[0].id)
+      expect((saveGame as any).mock.calls.length).toBeGreaterThan(callsBefore)
+    })
+
+    it('no-op for non-existent id', () => {
+      addJournalEntry('entry')
+      deleteJournalEntry('non-existent-id')
+      expect(getAllJournalEntries()).toHaveLength(1)
     })
   })
 })

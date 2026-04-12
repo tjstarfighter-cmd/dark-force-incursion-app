@@ -75,9 +75,9 @@ development_status:
   epic-4-retrospective: optional
 
   # Epic 5: Campaign Journal
-  epic-5: backlog
-  5-1-journal-entry-creation-and-turn-linking: backlog
-  5-2-journal-review-edit-and-delete: backlog
+  epic-5: done
+  5-1-journal-entry-creation-and-turn-linking: done
+  5-2-journal-review-edit-and-delete: done
   epic-5-retrospective: optional
 
   # Epic 6: Campaign Archive
