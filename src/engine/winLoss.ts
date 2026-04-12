@@ -1,7 +1,9 @@
 import type { GameSnapshot } from '../types/game.types'
 import { GameStatus } from '../types/game.types'
+import type { HexEdge } from '../types/hex.types'
 import { HexStatus } from '../types/hex.types'
-import { hexToKey } from './hexMath'
+import { hexToKey, getNeighborAtEdge } from './hexMath'
+import { isTargetMountain } from './terrain/mountain'
 
 /**
  * Check win/loss conditions after a turn resolves.
@@ -44,16 +46,32 @@ export function checkWinLoss(snapshot: GameSnapshot): GameStatus {
     }
   }
 
-  // Loss: no claimed, non-blocked hexes left to roll from (stalemate)
-  let hasSelectableHex = false
-  for (const [_, hexState] of snapshot.hexes) {
-    if (hexState.status === HexStatus.Claimed) {
-      hasSelectableHex = true
-      break
+  // Loss: no claimed hex can produce new territory (completely surrounded)
+  if (snapshot.turnNumber > 0) {
+    let canExpand = false
+    const mapBounds = new Set(snapshot.mapDefinition.hexes.map(h => hexToKey(h.coord)))
+
+    for (const [_, hexState] of snapshot.hexes) {
+      if (hexState.status !== HexStatus.Claimed) continue
+
+      // Check if any of the 6 neighbors is an empty, non-mountain, on-map position
+      for (let edge = 0; edge < 6; edge++) {
+        const neighbor = getNeighborAtEdge(hexState.coord, edge as HexEdge)
+        const neighborKey = hexToKey(neighbor)
+        if (!mapBounds.has(neighborKey)) continue
+        if (isTargetMountain(snapshot.mapDefinition, neighbor)) continue
+        const neighborState = snapshot.hexes.get(neighborKey)
+        if (!neighborState || neighborState.status === HexStatus.Empty) {
+          canExpand = true
+          break
+        }
+      }
+      if (canExpand) break
     }
-  }
-  if (!hasSelectableHex && snapshot.turnNumber > 0) {
-    return GameStatus.DarkForceWon
+
+    if (!canExpand) {
+      return GameStatus.DarkForceWon
+    }
   }
 
   return GameStatus.InProgress

@@ -18,7 +18,15 @@ function makeSnapshot(overrides: Partial<GameSnapshot> = {}): GameSnapshot {
     mapId: 'test',
     mapDefinition: {
       id: 'test', name: 'Test', description: '', schemaVersion: 1,
-      gridWidth: 10, gridHeight: 10, hexes: [], forts: [
+      gridWidth: 10, gridHeight: 10,
+      hexes: [
+        // Include enough map hexes so claimed hexes have valid neighbors
+        { coord: { q: 0, r: 0 } }, { coord: { q: 1, r: 0 } }, { coord: { q: 0, r: 1 } },
+        { coord: { q: 1, r: 1 } }, { coord: { q: 2, r: 2 } }, { coord: { q: 3, r: 3 } },
+        { coord: { q: 4, r: 4 } }, { coord: { q: 5, r: 5 } }, { coord: { q: 6, r: 6 } },
+        { coord: { q: 7, r: 7 } },
+      ],
+      forts: [
         { coord: { q: 1, r: 1 } },
         { coord: { q: 2, r: 2 } },
         { coord: { q: 3, r: 3 } },
