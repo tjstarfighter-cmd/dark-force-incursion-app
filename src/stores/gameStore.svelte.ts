@@ -7,6 +7,7 @@ import { TurnStack } from '../engine/turnStack'
 import type { TurnEntry } from '../engine/turnStack'
 import { resolveAction } from '../engine/ruleEngine'
 import { hexToKey } from '../engine/hexMath'
+import { checkWinLoss } from '../engine/winLoss'
 import { saveGame, loadActiveGame, deleteActiveGame } from '../persistence/gameRepository'
 
 let currentGame = $state<GameSnapshot | null>(null)
@@ -81,6 +82,11 @@ export function restoreGame(snapshot: GameSnapshot, turnEntries: TurnEntry[]): v
   turnStack = new TurnStack()
   for (const entry of turnEntries) {
     turnStack.push(entry)
+  }
+  // Re-check win/loss in case game ended while saved
+  const status = checkWinLoss(snapshot)
+  if (status !== snapshot.status) {
+    snapshot = { ...snapshot, status }
   }
   currentGame = snapshot
   initialized = true
