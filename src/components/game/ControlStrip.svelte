@@ -1,11 +1,52 @@
 <script lang="ts">
-  // All buttons disabled for now — functionality added in later epics
+  interface Props {
+    canUndo?: boolean
+    onUndo?: () => void
+    onTurnHistoryOpen?: () => void
+    onRulesOpen?: () => void
+  }
+
+  let { canUndo = false, onUndo, onTurnHistoryOpen, onRulesOpen }: Props = $props()
+
+  let longPressTimer: ReturnType<typeof setTimeout> | null = null
+
+  function handleUndoPointerDown() {
+    if (!canUndo) return
+    longPressTimer = setTimeout(() => {
+      longPressTimer = null
+      onTurnHistoryOpen?.()
+    }, 500)
+  }
+
+  function handleUndoPointerUp() {
+    if (longPressTimer !== null) {
+      clearTimeout(longPressTimer)
+      longPressTimer = null
+      onUndo?.()
+    }
+  }
+
+  function handleUndoPointerLeave() {
+    if (longPressTimer !== null) {
+      clearTimeout(longPressTimer)
+      longPressTimer = null
+    }
+  }
 </script>
 
 <div class="control-strip">
-  <button class="ctrl-btn" disabled title="Undo (Epic 4)">Undo</button>
+  <button
+    class="ctrl-btn"
+    class:disabled={!canUndo}
+    aria-disabled={!canUndo}
+    title="Undo"
+    onpointerdown={handleUndoPointerDown}
+    onpointerup={handleUndoPointerUp}
+    onpointerleave={handleUndoPointerLeave}
+    onpointercancel={handleUndoPointerLeave}
+  >Undo</button>
   <button class="ctrl-btn" disabled title="Journal (Epic 5)">Journal</button>
-  <button class="ctrl-btn" disabled title="Rules (Epic 4)">Rules</button>
+  <button class="ctrl-btn" title="Rules" onclick={() => onRulesOpen?.()}>Rules</button>
   <button class="ctrl-btn" disabled title="Settings">Menu</button>
 </div>
 
@@ -42,7 +83,8 @@
     touch-action: manipulation;
   }
 
-  .ctrl-btn:disabled {
+  .ctrl-btn:disabled,
+  .ctrl-btn.disabled {
     opacity: 0.4;
     cursor: default;
   }

@@ -117,6 +117,41 @@ function autoSave(): void {
   })
 }
 
+/**
+ * Undo the most recent turn. Returns true if successful.
+ * Turn 0 (initial game setup) is never removed.
+ */
+export function undo(): boolean {
+  if (!currentGame || turnStack.getLength() <= 1) return false
+
+  const currentTurn = currentGame.turnNumber
+  turnStack.popTo(currentTurn - 1)
+  const top = turnStack.peek()
+  if (!top) return false
+
+  currentGame = top.snapshot
+  autoSave()
+  return true
+}
+
+/**
+ * Rewind to a specific turn number. Returns true if successful.
+ */
+export function rewindTo(turnNumber: number): boolean {
+  if (!currentGame || turnStack.getLength() <= 1) return false
+
+  const top = turnStack.peek()
+  if (!top || turnNumber >= top.turnNumber || turnNumber < 0) return false
+
+  turnStack.popTo(turnNumber)
+  const newTop = turnStack.peek()
+  if (!newTop) return false
+
+  currentGame = newTop.snapshot
+  autoSave()
+  return true
+}
+
 export function getCurrentSnapshot(): GameSnapshot | null {
   return currentGame
 }
@@ -124,8 +159,13 @@ export function getCurrentSnapshot(): GameSnapshot | null {
 export const gameState = {
   get snapshot() { return currentGame },
   get isInitialized() { return initialized },
+  get canUndo() { return turnStack.getLength() > 1 },
 }
 
 export function getTurnStack(): TurnStack {
   return turnStack
+}
+
+export function getTurnHistory() {
+  return turnStack.getAll()
 }

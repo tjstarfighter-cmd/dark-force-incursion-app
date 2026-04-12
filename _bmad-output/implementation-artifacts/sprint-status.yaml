@@ -1,5 +1,5 @@
 # generated: 2026-04-11
-# last_updated: 2026-04-11
+# last_updated: 2026-04-12
 # project: dark-force-incursion-app
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-04-11
-last_updated: 2026-04-11
+last_updated: 2026-04-12
 project: dark-force-incursion-app
 project_key: NOKEY
 tracking_system: file-system
@@ -59,7 +59,7 @@ development_status:
   epic-2-retrospective: optional
 
   # Epic 3: Complete Game — Dark Force, Terrain & Victory
-  epic-3: backlog
+  epic-3: done
   3-1-blocked-hexes-and-dark-force-spawning: done
   3-2-dark-force-escalation-and-cascading-consequences: done
   3-3-mountain-terrain-and-fort-mechanics: done
@@ -68,10 +68,10 @@ development_status:
   epic-3-retrospective: optional
 
   # Epic 4: Undo, Override & Rules Reference
-  epic-4: backlog
-  4-1-undo-and-rewind: backlog
-  4-2-player-override-after-rewind: backlog
-  4-3-contextual-and-browsable-rules-reference: backlog
+  epic-4: done
+  4-1-undo-and-rewind: done
+  4-2-player-override-after-rewind: done
+  4-3-contextual-and-browsable-rules-reference: done
   epic-4-retrospective: optional
 
   # Epic 5: Campaign Journal

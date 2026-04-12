@@ -9,9 +9,12 @@
   import GameOver from './components/game/GameOver.svelte'
   import StatusBar from './components/game/StatusBar.svelte'
   import ControlStrip from './components/game/ControlStrip.svelte'
+  import TurnHistory from './components/game/TurnHistory.svelte'
+  import RulesReference from './components/rules/RulesReference.svelte'
+  import { detectContextualRules } from './engine/rulesContext'
   import TurnSummary from './components/game/TurnSummary.svelte'
   import { CALOSANTI_MAP } from './maps/calosanti'
-  import { startGame, dispatch, gameState, tryResumeGame } from './stores/gameStore.svelte'
+  import { startGame, dispatch, undo, rewindTo, gameState, getTurnHistory, tryResumeGame } from './stores/gameStore.svelte'
 
   const snapshot = $derived(gameState.snapshot)
   const isInitialized = $derived(gameState.isInitialized)
@@ -35,10 +38,23 @@
   let lastSourceBlocked = $state(false)
   let showTurnSummary = $state(false)
 
+  // Turn history overlay state
+  let showTurnHistory = $state(false)
+
+  // Rules reference state
+  let showRulesReference = $state(false)
+  let previousSnapshot = $state<typeof snapshot>(null)
+  const contextRuleIds = $derived(
+    snapshot ? detectContextualRules(snapshot, previousSnapshot) : ['hex-placement']
+  )
+
+  const canUndo = $derived(gameState.canUndo)
+
   function handleStartGame() {
     startGame(CALOSANTI_MAP)
     showTurnSummary = false
     lastTurnNumber = 0
+    previousSnapshot = null
   }
 
   function handleHexSelected(coord: HexCoord) {
@@ -51,6 +67,7 @@
 
     const prevSnapshot = snapshot
     const prevTurn = prevSnapshot?.turnNumber ?? 0
+    previousSnapshot = prevSnapshot
 
     const result = dispatch({
       type: 'placeHex',
@@ -112,7 +129,56 @@
     diceInputVisible = false
     pendingSourceCoord = null
   }
+
+  function handleUndo() {
+    if (!canUndo) return
+    previousSnapshot = snapshot
+    diceInputVisible = false
+    pendingSourceCoord = null
+    showTurnSummary = false
+    showRulesReference = false
+    hexGridRef?.clearSelection()
+    undo()
+  }
+
+  function handleRewindTo(turnNumber: number) {
+    previousSnapshot = snapshot
+    diceInputVisible = false
+    pendingSourceCoord = null
+    showTurnSummary = false
+    showTurnHistory = false
+    showRulesReference = false
+    rewindTo(turnNumber)
+  }
+
+  function handleTurnHistoryOpen() {
+    showTurnHistory = true
+    showRulesReference = false
+  }
+
+  function handleTurnHistoryClose() {
+    showTurnHistory = false
+  }
+
+  function handleRulesOpen() {
+    showRulesReference = true
+    showTurnHistory = false
+  }
+
+  function handleRulesClose() {
+    showRulesReference = false
+  }
+
+  // Keyboard shortcut: Ctrl+Z / Cmd+Z for undo
+  function handleKeydown(e: KeyboardEvent) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+      e.preventDefault()
+      handleUndo()
+    }
+  }
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 {#if !isInitialized}
   <!-- Waiting for persistence check -->
@@ -143,7 +209,23 @@
     />
   {/if}
 
-  <ControlStrip />
+  <ControlStrip {canUndo} onUndo={handleUndo} onTurnHistoryOpen={handleTurnHistoryOpen} onRulesOpen={handleRulesOpen} />
+
+  {#if showTurnHistory}
+    <TurnHistory
+      entries={getTurnHistory()}
+      currentTurn={snapshot.turnNumber}
+      onSelectTurn={handleRewindTo}
+      onClose={handleTurnHistoryClose}
+    />
+  {/if}
+
+  {#if showRulesReference}
+    <RulesReference
+      {contextRuleIds}
+      onClose={handleRulesClose}
+    />
+  {/if}
 
   <DiceInput
     visible={diceInputVisible}
