@@ -1,0 +1,100 @@
+# generated: 2026-04-11
+# last_updated: 2026-04-11
+# project: dark-force-incursion-app
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: {project-root}/_bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-04-11
+last_updated: 2026-04-11
+project: dark-force-incursion-app
+project_key: NOKEY
+tracking_system: file-system
+story_location: "{project-root}/_bmad-output/implementation-artifacts"
+
+development_status:
+  # Epic 1: Interactive Hex Map
+  epic-1: in-progress
+  1-1-project-scaffolding-and-design-system-foundation: done
+  1-2-hex-grid-core-coordinate-system-and-map-data: done
+  1-3-hex-grid-rendering-svg-map-with-visual-states: done
+  epic-1-retrospective: optional
+
+  # Epic 2: Roll and Claim — The Core Turn Loop
+  epic-2: backlog
+  2-1-game-state-management-and-turn-stack: backlog
+  2-2-hex-selection-and-edge-targets: backlog
+  2-3-dice-input-manual-and-digital: backlog
+  2-4-hex-placement-and-clockwise-orientation: backlog
+  2-5-army-detection-and-status-display: backlog
+  epic-2-retrospective: optional
+
+  # Epic 3: Complete Game — Dark Force, Terrain & Victory
+  epic-3: backlog
+  3-1-blocked-hexes-and-dark-force-spawning: backlog
+  3-2-dark-force-escalation-and-cascading-consequences: backlog
+  3-3-mountain-terrain-and-fort-mechanics: backlog
+  3-4-win-loss-detection-and-game-over: backlog
+  3-5-persistence-pause-and-resume: backlog
+  epic-3-retrospective: optional
+
+  # Epic 4: Undo, Override & Rules Reference
+  epic-4: backlog
+  4-1-undo-and-rewind: backlog
+  4-2-player-override-after-rewind: backlog
+  4-3-contextual-and-browsable-rules-reference: backlog
+  epic-4-retrospective: optional
+
+  # Epic 5: Campaign Journal
+  epic-5: backlog
+  5-1-journal-entry-creation-and-turn-linking: backlog
+  5-2-journal-review-edit-and-delete: backlog
+  epic-5-retrospective: optional
+
+  # Epic 6: Campaign Archive
+  epic-6: backlog
+  6-1-archive-save-and-campaign-list: backlog
+  6-2-game-detail-view: backlog
+  epic-6-retrospective: optional
+
+  # Epic 7: PWA & Offline Experience
+  epic-7: backlog
+  7-1-pwa-configuration-and-installation: backlog
+  7-2-offline-first-and-performance: backlog
+  epic-7-retrospective: optional
+
+  # Epic 8: Cross-Device Sync
+  epic-8: backlog
+  8-1-sync-configuration-and-local-only-mode: backlog
+  8-2-cloud-sync-read-and-write: backlog
+  8-3-conflict-detection-and-resolution: backlog
+  epic-8-retrospective: optional

@@ -1,0 +1,132 @@
+/* ==========================================================================
+   Dark Force Incursion — Design Token System
+   ========================================================================== */
+
+/* --- Color Palette --- */
+
+:root {
+  /* Background & Surface */
+  --color-bg-app: #1a1a2e;
+  --color-bg-surface: #25253e;
+  --color-bg-map: #2d2d44;
+
+  /* Player Colors (Warm) */
+  --color-hex-claimed: #d4a574;
+  --color-hex-claimed-border: #8b6914;
+  --color-army: #f0c040;
+  --color-fort-captured: #e8b830;
+  --color-fort-uncaptured: #7a7a8a;
+  --color-hex-numbers: #e8e0d0;
+
+  /* Enemy Colors (Cold) */
+  --color-dark-force: #8b1a1a;
+  --color-dark-force-flash: #c0302a;
+
+  /* Terrain Colors */
+  --color-terrain-mountain: #6a6a7a;
+  --color-terrain-forest: #2d5a3a;
+  --color-terrain-lake: #3a5a7a;
+  --color-terrain-marsh: #5a5a2a;
+  --color-terrain-muster: #6a8a3a;
+  --color-terrain-ambush: #5a2a3a;
+
+  /* UI Accent */
+  --color-accent: #d4a040;
+  --color-warning: #c06030;
+  --color-success: #5a8a4a;
+  --color-text-primary: #e8e0d0;
+  --color-text-secondary: #9a9080;
+
+  /* --- Typography --- */
+
+  /* Font Families */
+  --font-data: 'Inter', 'IBM Plex Sans', system-ui, sans-serif;
+  --font-heading: 'Cinzel', serif;
+  --font-body: 'Crimson Text', 'Cormorant Garamond', serif;
+
+  /* Font Sizes (1.25 modular ratio) */
+  --text-display: 1.5rem;    /* 24px */
+  --text-h1: 1.25rem;        /* 20px */
+  --text-h2: 1rem;           /* 16px */
+  --text-body: 0.875rem;     /* 14px */
+  --text-caption: 0.75rem;   /* 12px */
+
+  /* Font Weights */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* Line Heights */
+  --leading-body: 1.5;
+  --leading-heading: 1.2;
+
+  /* --- Spacing Scale (8px base) --- */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+
+  /* --- Animation Timing --- */
+  --duration-cascade-beat: 200ms;
+  --duration-cascade-terrain: 300ms;
+  --duration-cascade-fort: 100ms;
+  --duration-panel-transition: 200ms;
+  --duration-dice-roll: 1000ms;
+  --duration-toast-dismiss: 3000ms;
+  --easing-default: ease-out;
+
+  /* --- Z-Index Layers --- */
+  --z-map: 0;
+  --z-chrome: 100;        /* StatusBar, ControlStrip */
+  --z-dice: 200;          /* DiceInput */
+  --z-panel: 300;         /* JournalPanel, RulesReference */
+  --z-toast: 400;         /* Toast notifications */
+  --z-modal: 500;         /* Modal, GameOver overlay */
+
+  /* --- Borders & Shadows --- */
+  --border-hex-default: 1px solid rgba(255, 255, 255, 0.1);
+  --border-hex-claimed: 2px solid var(--color-hex-claimed-border);
+  --border-hex-selected: 2px solid var(--color-army);
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --shadow-overlay: 0 -2px 16px rgba(0, 0, 0, 0.4);
+  --backdrop-blur: blur(12px);
+}
+
+/* --- Global Reset & Base Styles --- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-app);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Reduced Motion --- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

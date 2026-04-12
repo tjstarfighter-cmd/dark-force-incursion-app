@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dark Force Incursion — Design Direction Showcase</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ========== GLOBAL RESET & BASE ========== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Crimson Text', Georgia, serif;
+    background: #0d0d1a;
+    color: #e8e0d0;
+    line-height: 1.5;
+  }
+
+  /* ========== NAVIGATION ========== */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    background: rgba(13, 13, 26, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(212, 160, 64, 0.3);
+    padding: 12px 24px;
+    display: flex; align-items: center; gap: 16px;
+    flex-wrap: wrap;
+  }
+  .nav h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 16px;
+    color: #d4a040;
+    white-space: nowrap;
+  }
+  .nav-links { display: flex; gap: 8px; flex-wrap: wrap; }
+  .nav-link {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    padding: 6px 12px;
+    background: rgba(212, 160, 64, 0.1);
+    border: 1px solid rgba(212, 160, 64, 0.3);
+    border-radius: 4px;
+    color: #e8e0d0;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+  .nav-link:hover, .nav-link.active {
+    background: rgba(212, 160, 64, 0.25);
+    border-color: #d4a040;
+    color: #f0c040;
+  }
+
+  /* ========== SECTION LAYOUT ========== */
+  .direction-section {
+    min-height: 100vh;
+    padding: 80px 24px 48px;
+    border-bottom: 2px solid rgba(212, 160, 64, 0.15);
+  }
+  .direction-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .direction-header h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 28px;
+    color: #d4a040;
+    margin-bottom: 8px;
+  }
+  .direction-header p {
+    font-size: 16px;
+    color: #9a9080;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .direction-label {
+    display: inline-block;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #d4a040;
+    background: rgba(212, 160, 64, 0.1);
+    padding: 4px 12px;
+    border-radius: 3px;
+    margin-bottom: 12px;
+  }
+
+  /* ========== MOCKUP FRAMES ========== */
+  .mockup-container {
+    display: flex;
+    gap: 32px;
+    justify-content: center;
+    flex-wrap: wrap;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .mockup-frame {
+    border: 2px solid rgba(212, 160, 64, 0.2);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #1a1a2e;
+    flex-shrink: 0;
+  }
+  .mockup-phone {
+    width: 375px;
+    height: 700px;
+  }
+  .mockup-desktop {
+    width: 900px;
+    height: 560px;
+  }
+  .mockup-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    text-align: center;
+    color: #9a9080;
+    padding: 8px;
+    background: rgba(0,0,0,0.3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* ========== SHARED GAME UI COMPONENTS ========== */
+
+  /* Status Bar */
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .status-item { display: flex; align-items: center; gap: 4px; }
+  .status-value { font-weight: 600; }
+  .status-df { color: #c0302a; }
+  .status-fort { color: #e8b830; }
+  .status-turn { color: #9a9080; }
+
+  /* Hex Grid Area */
+  .hex-grid-area {
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* SVG Hex Styling */
+  .hex-empty {
+    fill: #2d2d44;
+    stroke: #3a3a54;
+    stroke-width: 1;
+  }
+  .hex-claimed {
+    fill: #d4a574;
+    stroke: #8b6914;
+    stroke-width: 1.5;
+  }
+  .hex-selected {
+    fill: #d4a574;
+    stroke: #f0c040;
+    stroke-width: 2.5;
+    filter: drop-shadow(0 0 6px rgba(240, 192, 64, 0.4));
+  }
+  .hex-blocked {
+    fill: #3a3040;
+    stroke: #5a4a5a;
+    stroke-width: 1.5;
+    opacity: 0.7;
+  }
+  .hex-mountain {
+    fill: #4a4a5a;
+    stroke: #6a6a7a;
+    stroke-width: 1.5;
+  }
+  .hex-fort {
+    fill: #2d2d44;
+    stroke: #7a7a8a;
+    stroke-width: 2;
+    stroke-dasharray: 4 2;
+  }
+  .hex-fort-captured {
+    fill: #3a3520;
+    stroke: #e8b830;
+    stroke-width: 2;
+  }
+  .hex-number {
+    font-family: 'Inter', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    fill: #e8e0d0;
+  }
+  .hex-number-empty {
+    font-family: 'Inter', sans-serif;
+    font-size: 8px;
+    fill: #5a5a6a;
+  }
+  .army-marker {
+    fill: none;
+    stroke: #f0c040;
+    stroke-width: 2;
+  }
+  .df-marker {
+    fill: #8b1a1a;
+    opacity: 0.85;
+  }
+  .terrain-icon {
+    font-size: 14px;
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+  .edge-wedge {
+    fill: rgba(240, 192, 64, 0.15);
+    stroke: rgba(240, 192, 64, 0.4);
+    stroke-width: 1;
+    cursor: pointer;
+    transition: fill 0.15s;
+  }
+  .edge-wedge:hover {
+    fill: rgba(240, 192, 64, 0.35);
+  }
+  .edge-wedge-dim {
+    fill: rgba(100, 100, 120, 0.1);
+    stroke: rgba(100, 100, 120, 0.2);
+    stroke-width: 1;
+  }
+
+  /* Control Strip */
+  .control-strip {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 8px 12px;
+  }
+  .ctrl-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    padding: 8px 12px;
+    background: rgba(212, 160, 64, 0.1);
+    border: 1px solid rgba(212, 160, 64, 0.3);
+    border-radius: 6px;
+    color: #e8e0d0;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .ctrl-btn:hover {
+    background: rgba(212, 160, 64, 0.25);
+    border-color: #d4a040;
+  }
+
+  /* Dice Buttons */
+  .dice-row {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    padding: 8px;
+  }
+  .dice-btn {
+    width: 44px;
+    height: 44px;
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    background: rgba(212, 160, 64, 0.12);
+    border: 2px solid rgba(212, 160, 64, 0.4);
+    border-radius: 8px;
+    color: #e8e0d0;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .dice-btn:hover {
+    background: rgba(212, 160, 64, 0.3);
+    border-color: #f0c040;
+    color: #f0c040;
+    transform: scale(1.05);
+  }
+
+  /* Turn Summary */
+  .turn-summary {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    padding: 6px 12px;
+    color: #9a9080;
+    text-align: center;
+    border-top: 1px solid rgba(212, 160, 64, 0.1);
+  }
+  .turn-summary strong { color: #e8e0d0; }
+  .turn-summary .army-text { color: #f0c040; }
+  .turn-summary .df-text { color: #c0302a; }
+
+  /* Journal Panel */
+  .journal-panel {
+    background: #25253e;
+    border-top: 1px solid rgba(212, 160, 64, 0.2);
+    padding: 12px;
+  }
+  .journal-header {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    color: #d4a040;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .journal-close {
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    color: #9a9080;
+    cursor: pointer;
+    background: none;
+    border: none;
+    line-height: 1;
+  }
+  .journal-textarea {
+    width: 100%;
+    min-height: 60px;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(212, 160, 64, 0.15);
+    border-radius: 6px;
+    padding: 8px;
+    font-family: 'Crimson Text', serif;
+    font-size: 14px;
+    color: #e8e0d0;
+    resize: none;
+  }
+  .journal-entry {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .journal-entry-turn {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    color: #9a9080;
+  }
+  .journal-entry-text {
+    font-family: 'Crimson Text', serif;
+    font-size: 14px;
+    font-style: italic;
+    color: #c8c0b0;
+    margin-top: 2px;
+  }
+
+  /* Archive List */
+  .archive-card {
+    background: #25253e;
+    border: 1px solid rgba(212, 160, 64, 0.15);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .archive-card:hover {
+    border-color: rgba(212, 160, 64, 0.4);
+    background: #2a2a42;
+  }
+  .archive-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .archive-card-map {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    color: #d4a040;
+  }
+  .archive-card-result {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+  .result-win { background: rgba(90, 138, 74, 0.3); color: #8ac070; }
+  .result-loss { background: rgba(192, 48, 42, 0.2); color: #c06050; }
+  .archive-card-meta {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: #9a9080;
+    display: flex;
+    gap: 12px;
+  }
+
+  /* ========== DIRECTION-SPECIFIC STYLES ========== */
+
+  /* Direction A: Immersive Full-Bleed */
+  .dir-a .status-bar {
+    background: rgba(13, 13, 26, 0.7);
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 10;
+  }
+  .dir-a .hex-grid-area {
+    background: radial-gradient(ellipse at center, #2d2d44 0%, #1a1a2e 70%, #0d0d1a 100%);
+  }
+  .dir-a .control-strip {
+    background: rgba(13, 13, 26, 0.7);
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    z-index: 10;
+  }
+
+  /* Direction B: Clean Segmented */
+  .dir-b .status-bar {
+    background: #1e1e32;
+    border-bottom: 1px solid rgba(212, 160, 64, 0.15);
+  }
+  .dir-b .hex-grid-area {
+    background: #1a1a2e;
+  }
+  .dir-b .control-strip {
+    background: #1e1e32;
+    border-top: 1px solid rgba(212, 160, 64, 0.15);
+  }
+
+  /* Direction C: War Table */
+  .dir-c .status-bar {
+    background: linear-gradient(180deg, #1a1510 0%, #1a1a2e 100%);
+    border-bottom: 2px solid rgba(139, 105, 20, 0.3);
+  }
+  .dir-c .hex-grid-area {
+    background:
+      radial-gradient(ellipse at center, rgba(212, 165, 116, 0.05) 0%, transparent 60%),
+      #1a1a2e;
+  }
+  .dir-c .control-strip {
+    background: linear-gradient(0deg, #1a1510 0%, #1a1a2e 100%);
+    border-top: 2px solid rgba(139, 105, 20, 0.3);
+  }
+
+  /* Direction D: Minimal Floating */
+  .dir-d .status-bar {
+    background: transparent;
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 10;
+  }
+  .dir-d .status-item {
+    background: rgba(13, 13, 26, 0.75);
+    padding: 4px 10px;
+    border-radius: 12px;
+    backdrop-filter: blur(4px);
+  }
+  .dir-d .hex-grid-area {
+    background: #1a1a2e;
+  }
+  .dir-d .control-strip {
+    background: transparent;
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    z-index: 10;
+  }
+  .dir-d .ctrl-btn {
+    background: rgba(13, 13, 26, 0.75);
+    backdrop-filter: blur(4px);
+    border-radius: 12px;
+  }
+
+  /* Direction E: Side Panel Desktop */
+  .dir-e-layout {
+    display: flex;
+    height: 100%;
+  }
+  .dir-e-main { flex: 1; display: flex; flex-direction: column; }
+  .dir-e-side {
+    width: 280px;
+    background: #1e1e32;
+    border-left: 1px solid rgba(212, 160, 64, 0.15);
+    display: flex;
+    flex-direction: column;
+  }
+  .dir-e-side-header {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    color: #d4a040;
+    padding: 12px;
+    border-bottom: 1px solid rgba(212, 160, 64, 0.1);
+  }
+  .dir-e-side-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+  }
+
+  /* Direction F: Game Over */
+  .game-over-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    background: radial-gradient(ellipse at center, #25253e 0%, #1a1a2e 50%, #0d0d1a 100%);
+    padding: 24px;
+    text-align: center;
+  }
+  .game-over-title {
+    font-family: 'Cinzel', serif;
+    font-size: 24px;
+    color: #d4a040;
+    margin-bottom: 4px;
+  }
+  .game-over-subtitle {
+    font-family: 'Crimson Text', serif;
+    font-size: 16px;
+    font-style: italic;
+    color: #9a9080;
+    margin-bottom: 24px;
+  }
+  .game-over-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+    width: 100%;
+    max-width: 280px;
+  }
+  .game-over-stat {
+    background: rgba(212, 160, 64, 0.08);
+    border: 1px solid rgba(212, 160, 64, 0.15);
+    border-radius: 8px;
+    padding: 12px;
+  }
+  .game-over-stat-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    color: #9a9080;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .game-over-stat-value {
+    font-family: 'Inter', sans-serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: #e8e0d0;
+    margin-top: 2px;
+  }
+  .game-over-actions {
+    display: flex;
+    gap: 12px;
+  }
+  .game-over-btn {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    padding: 10px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .game-over-btn-primary {
+    background: rgba(212, 160, 64, 0.2);
+    border: 1px solid #d4a040;
+    color: #f0c040;
+  }
+  .game-over-btn-primary:hover {
+    background: rgba(212, 160, 64, 0.35);
+  }
+  .game-over-btn-secondary {
+    background: transparent;
+    border: 1px solid rgba(212, 160, 64, 0.3);
+    color: #9a9080;
+  }
+  .game-over-btn-secondary:hover {
+    border-color: #d4a040;
+    color: #e8e0d0;
+  }
+
+  /* ========== NOTES ========== */
+  .direction-notes {
+    max-width: 700px;
+    margin: 24px auto 0;
+    padding: 16px;
+    background: rgba(212, 160, 64, 0.05);
+    border: 1px solid rgba(212, 160, 64, 0.1);
+    border-radius: 8px;
+  }
+  .direction-notes h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    color: #d4a040;
+    margin-bottom: 8px;
+  }
+  .direction-notes ul {
+    list-style: none;
+    padding: 0;
+  }
+  .direction-notes li {
+    font-size: 14px;
+    color: #9a9080;
+    padding: 3px 0;
+    padding-left: 16px;
+    position: relative;
+  }
+  .direction-notes li::before {
+    content: "\2022";
+    color: #d4a040;
+    position: absolute;
+    left: 0;
+  }
+
+  /* ========== RESPONSIVE ========== */
+  @media (max-width: 900px) {
+    .mockup-desktop { width: 100%; max-width: 900px; }
+    .mockup-container { flex-direction: column; align-items: center; }
+  }
+  @media (max-width: 500px) {
+    .mockup-phone { width: 100%; max-width: 375px; }
+    .nav h1 { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav">
+  <h1>Dark Force Incursion — Design Directions</h1>
+  <div class="nav-links">
+    <a href="#dir-a" class="nav-link">A: Immersive</a>
+    <a href="#dir-b" class="nav-link">B: Segmented</a>
+    <a href="#dir-c" class="nav-link">C: War Table</a>
+    <a href="#dir-d" class="nav-link">D: Minimal</a>
+    <a href="#dir-e" class="nav-link">E: Desktop</a>
+    <a href="#dir-f" class="nav-link">F: Game Over</a>
+    <a href="#dir-g" class="nav-link">G: Archive</a>
+    <a href="#dir-h" class="nav-link">H: Journal</a>
+  </div>
+</nav>
+
+<!-- ==================== DIRECTION A: IMMERSIVE FULL-BLEED ==================== -->
+<section id="dir-a" class="direction-section">
+  <div class="direction-header">
+    <span class="direction-label">Direction A</span>
+    <h2>Immersive Full-Bleed</h2>
+    <p>The hex grid fills the entire screen. Status and controls float as translucent overlays. Maximum map real estate. The app disappears; the battlefield remains.</p>
+  </div>
+
+  <div class="mockup-container">
+    <div class="mockup-frame mockup-phone dir-a">
+      <div class="mockup-label">Phone — Active Gameplay</div>
+      <div style="position: relative; height: calc(100% - 28px);">
+        <!-- Floating Status Bar -->
+        <div class="status-bar">
+          <div class="status-item status-df">
+            <span>DF:</span>
+            <span class="status-value">7/25</span>
+          </div>
+          <div class="status-item status-fort">
+            <span>Forts:</span>
+            <span class="status-value">2/7</span>
+          </div>
+          <div class="status-item status-turn">
+            <span>Turn</span>
+            <span class="status-value">14</span>
+          </div>
+        </div>
+
+        <!-- Hex Grid -->
+        <div class="hex-grid-area" style="height: 100%;">
+          <svg viewBox="0 0 375 520" style="width: 100%; height: 100%;">
+            <!-- Background hexes (unclaimed) -->
+            <polygon class="hex-empty" points="120,80 150,63 180,80 180,114 150,131 120,114"/>
+            <polygon class="hex-empty" points="180,80 210,63 240,80 240,114 210,131 180,114"/>
+            <polygon class="hex-empty" points="60,131 90,114 120,131 120,165 90,182 60,165"/>
+            <polygon class="hex-empty" points="240,80 270,63 300,80 300,114 270,131 240,114"/>
+            <polygon class="hex-empty" points="300,131 330,114 360,131 360,165 330,182 300,165"/>
+            <polygon class="hex-empty" points="60,233 90,216 120,233 120,267 90,284 60,267"/>
+            <polygon class="hex-empty" points="300,233 330,216 360,233 360,267 330,284 300,267"/>
+            <polygon class="hex-empty" points="60,335 90,318 120,335 120,369 90,386 60,369"/>
+            <polygon class="hex-empty" points="300,335 330,318 360,335 360,369 330,386 300,369"/>
+
+            <!-- Mountain terrain -->
+            <polygon class="hex-mountain" points="240,182 270,165 300,182 300,216 270,233 240,216"/>
+            <text class="terrain-icon" x="270" y="200" fill="#8a8a9a">&#9650;</text>
+
+            <!-- Fort (uncaptured) -->
+            <polygon class="hex-fort" points="60,335 90,318 120,335 120,369 90,386 60,369"/>
+            <text class="terrain-icon" x="90" y="354" fill="#7a7a8a">&#9733;</text>
+
+            <!-- Claimed hexes with numbers -->
+            <polygon class="hex-claimed" points="150,131 180,114 210,131 210,165 180,182 150,165"/>
+            <text class="hex-number" x="180" y="127">3</text>
+            <text class="hex-number" x="200" y="141">4</text>
+            <text class="hex-number" x="200" y="162">5</text>
+            <text class="hex-number" x="180" y="175">6</text>
+            <text class="hex-number" x="160" y="162">1</text>
+            <text class="hex-number" x="160" y="141">2</text>
+
+            <polygon class="hex-claimed" points="120,182 150,165 180,182 180,216 150,233 120,216"/>
+            <text class="hex-number" x="150" y="178">5</text>
+            <text class="hex-number" x="170" y="192">6</text>
+            <text class="hex-number" x="170" y="213">1</text>
+            <text class="hex-number" x="150" y="226">2</text>
+            <text class="hex-number" x="130" y="213">3</text>
+            <text class="hex-number" x="130" y="192">4</text>
+            <!-- Army marker (matching 5s) -->
+            <circle class="army-marker" cx="165" cy="172" r="7"/>
+
+            <!-- Selected hex -->
+            <polygon class="hex-selected" points="180,233 210,216 240,233 240,267 210,284 180,267"/>
+            <text class="hex-number" x="210" y="229">2</text>
+            <text class="hex-number" x="230" y="243">3</text>
+            <text class="hex-number" x="230" y="264">4</text>
+            <text class="hex-number" x="210" y="277">5</text>
+            <text class="hex-number" x="190" y="264">6</text>
+            <text class="hex-number" x="190" y="243">1</text>
+
+            <!-- Edge wedges for selected hex -->
+            <polygon class="edge-wedge" points="210,216 240,233 210,229"/>
+            <polygon class="edge-wedge" points="240,233 240,267 230,243"/>
+            <polygon class="edge-wedge" points="240,267 210,284 230,264"/>
+            <polygon class="edge-wedge-dim" points="210,284 180,267 210,277"/>
+            <polygon class="edge-wedge" points="180,267 180,233 190,264"/>
+            <polygon class="edge-wedge-dim" points="180,233 210,216 190,243"/>
+
+            <!-- Blocked hex -->
+            <polygon class="hex-blocked" points="150,284 180,267 210,284 210,318 180,335 150,318"/>
+            <text class="hex-number" x="180" y="280" style="opacity:0.4">4</text>
+            <text class="hex-number" x="200" y="294" style="opacity:0.4">5</text>
+            <text class="hex-number" x="200" y="315" style="opacity:0.4">6</text>
+            <text class="hex-number" x="180" y="328" style="opacity:0.4">1</text>
+            <text class="hex-number" x="160" y="315" style="opacity:0.4">2</text>
+            <text class="hex-number" x="160" y="294" style="opacity:0.4">3</text>
+            <line x1="155" y1="287" x2="205" y2="325" stroke="#5a4a5a" stroke-width="2"/>
+            <line x1="205" y1="287" x2="155" y2="325" stroke="#5a4a5a" stroke-width="2"/>
+
+            <!-- Claimed hex with Dark Force -->
+            <polygon class="hex-claimed" points="210,131 240,114 270,131 270,165 240,182 210,165"/>
+            <text class="hex-number" x="240" y="127">1</text>
+            <text class="hex-number" x="260" y="141">2</text>
+            <text class="hex-number" x="260" y="162">3</text>
+            <text class="hex-number" x="240" y="175">4</text>
+            <text class="hex-number" x="220" y="162">5</text>
+            <text class="hex-number" x="220" y="141">6</text>
+            <!-- Dark Force marker -->
+            <rect class="df-marker" x="254" y="148" width="14" height="8" rx="1"/>
+
+            <!-- Fort (captured) -->
+            <polygon class="hex-fort-captured" points="120,284 150,267 180,284 180,318 150,335 120,318"/>
+            <text class="hex-number" x="150" y="280">6</text>
+            <text class="hex-number" x="170" y="294">1</text>
+            <text class="hex-number" x="170" y="315">2</text>
+            <text class="hex-number" x="150" y="328">3</text>
+            <text class="hex-number" x="130" y="315">4</text>
+            <text class="hex-number" x="130" y="294">5</text>
+            <text class="terrain-icon" x="150" y="302" fill="#e8b830">&#9733;</text>
+            <circle class="army-marker" cx="165" cy="275" r="7"/>
+
+            <!-- More claimed -->
+            <polygon class="hex-claimed" points="180,182 210,165 240,182 240,216 210,233 180,216"/>
+            <text class="hex-number" x="210" y="178">4</text>
+            <text class="hex-number" x="230" y="192">5</text>
+            <text class="hex-number" x="230" y="213">6</text>
+            <text class="hex-number" x="210" y="226">1</text>
+            <text class="hex-number" x="190" y="213">2</text>
+            <text class="hex-number" x="190" y="192">3</text>
+          </svg>
+        </div>
+
+        <!-- Floating Controls -->
+        <div class="control-strip">
+          <button class="ctrl-btn">&#8634; Undo</button>
+          <button class="ctrl-btn">&#128221; Journal</button>
+          <button class="ctrl-btn">&#128214; Rules</button>
+          <button class="ctrl-btn">&#9881;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phone with dice input visible -->
+    <div class="mockup-frame mockup-phone dir-a">
+      <div class="mockup-label">Phone — Dice Input Active</div>
+      <div style="position: relative; height: calc(100% - 28px);">
+        <div class="status-bar">
+          <div class="status-item status-df"><span>DF:</span><span class="status-value">7/25</span></div>
+          <div class="status-item status-fort"><span>Forts:</span><span class="status-value">2/7</span></div>
+          <div class="status-item status-turn"><span>Turn</span><span class="status-value">14</span></div>
+        </div>
+        <div class="hex-grid-area" style="height: 100%;">
+          <svg viewBox="0 0 375 520" style="width: 100%; height: 100%;">
+            <polygon class="hex-claimed" points="150,180 180,163 210,180 210,214 180,231 150,214"/>
+            <polygon class="hex-claimed" points="120,231 150,214 180,231 180,265 150,282 120,265"/>
+            <polygon class="hex-selected" points="180,282 210,265 240,282 240,316 210,333 180,316"/>
+            <polygon class="hex-empty" points="240,282 270,265 300,282 300,316 270,333 240,316"/>
+            <polygon class="hex-empty" points="120,333 150,316 180,333 180,367 150,384 120,367"/>
+            <!-- Direction indicator -->
+            <line x1="240" y1="282" x2="260" y2="270" stroke="#f0c040" stroke-width="2" stroke-dasharray="4 3"/>
+            <text x="265" y="268" font-family="Inter" font-size="10" fill="#f0c040">Rolling here</text>
+          </svg>
+        </div>
+        <!-- Dice input overlay -->
+        <div style="position: absolute; bottom: 56px; left: 0; right: 0; background: rgba(13,13,26,0.9); backdrop-filter: blur(8px); padding: 12px; border-top: 1px solid rgba(212,160,64,0.2);">
+          <div style="text-align: center; font-family: 'Cinzel', serif; font-size: 13px; color: #d4a040; margin-bottom: 8px;">Roll your die</div>
+          <div class="dice-row">
+            <button class="dice-btn">1</button>
+            <button class="dice-btn">2</button>
+            <button class="dice-btn">3</button>
+            <button class="dice-btn">4</button>
+            <button class="dice-btn">5</button>
+            <button class="dice-btn">6</button>
+          </div>
+          <div style="text-align: center; margin-top: 8px;">
+            <button class="ctrl-btn" style="margin: 0 auto; font-size: 12px;">&#127922; Digital Roll</button>
+          </div>
+        </div>
+        <div class="control-strip" style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(13,13,26,0.7);">
+          <button class="ctrl-btn">&#8634; Undo</button>
+          <button class="ctrl-btn">&#128221; Journal</button>
+          <button class="ctrl-btn">&#128214; Rules</button>
+          <button class="ctrl-btn">&#9881;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="direction-notes">
+    <h3>Direction A Notes</h3>
+    <ul>
+      <li>Maximum hex grid real estate — status and controls are translucent overlays</li>
+      <li>The map truly IS the interface — nothing competes with it</li>
+      <li>Translucent bars ensure map content behind them is partially visible</li>
+      <li>Risk: overlapping content in dense late-game states</li>
+      <li>Best for: players who want full immersion and maximum map visibility</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ==================== DIRECTION B: CLEAN SEGMENTED ==================== -->
+<section id="dir-b" class="direction-section">
+  <div class="direction-header">
+    <span class="direction-label">Direction B</span>
+    <h2>Clean Segmented</h2>
+    <p>Clear visual boundaries between status, map, and controls. Each zone is distinct. Predictable layout, easy to scan. The map is prominent but contained within defined bounds.</p>
+  </div>
+
+  <div class="mockup-container">
+    <div class="mockup-frame mockup-phone dir-b">
+      <div class="mockup-label">Phone — Active Gameplay</div>
+      <div style="height: calc(100% - 28px); display: flex; flex-direction: column;">
+        <div class="status-bar">
+          <div class="status-item status-df"><span>DF:</span><span class="status-value">7/25</span></div>
+          <div class="status-item status-fort"><span>Forts:</span><span class="status-value">2/7</span></div>
+          <div class="status-item status-turn"><span>Turn</span><span class="status-value">14</span></div>
+        </div>
+        <div class="turn-summary">
+          <strong>Turn 13:</strong> Hex placed. <span class="army-text">+1 Army</span>. <span class="df-text">+1 Dark Force</span>.
+        </div>
+        <div class="hex-grid-area" style="flex: 1;">
+          <svg viewBox="0 0 375 460" style="width: 100%; height: 100%;">
+            <polygon class="hex-empty" points="120,60 150,43 180,60 180,94 150,111 120,94"/>
+            <polygon class="hex-empty" points="180,60 210,43 240,60 240,94 210,111 180,94"/>
+            <polygon class="hex-empty" points="240,60 270,43 300,60 300,94 270,111 240,94"/>
+            <polygon class="hex-empty" points="60,111 90,94 120,111 120,145 90,162 60,145"/>
+            <polygon class="hex-mountain" points="240,162 270,145 300,162 300,196 270,213 240,196"/>
+            <text class="terrain-icon" x="270" y="180" fill="#8a8a9a">&#9650;</text>
+            <polygon class="hex-fort" points="300,213 330,196 360,213 360,247 330,264 300,247"/>
+            <text class="terrain-icon" x="330" y="232" fill="#7a7a8a">&#9733;</text>
+            <polygon class="hex-claimed" points="150,111 180,94 210,111 210,145 180,162 150,145"/>
+            <text class="hex-number" x="180" y="107">3</text><text class="hex-number" x="200" y="121">4</text>
+            <text class="hex-number" x="200" y="142">5</text><text class="hex-number" x="180" y="155">6</text>
+            <text class="hex-number" x="160" y="142">1</text><text class="hex-number" x="160" y="121">2</text>
+            <polygon class="hex-claimed" points="120,162 150,145 180,162 180,196 150,213 120,196"/>
+            <text class="hex-number" x="150" y="158">5</text><text class="hex-number" x="170" y="172">6</text>
+            <text class="hex-number" x="170" y="193">1</text><text class="hex-number" x="150" y="206">2</text>
+            <text class="hex-number" x="130" y="193">3</text><text class="hex-number" x="130" y="172">4</text>
+            <circle class="army-marker" cx="165" cy="152" r="7"/>
+            <polygon class="hex-claimed" points="180,162 210,145 240,162 240,196 210,213 180,196"/>
+            <text class="hex-number" x="210" y="158">4</text><text class="hex-number" x="230" y="172">5</text>
+            <text class="hex-number" x="230" y="193">6</text><text class="hex-number" x="210" y="206">1</text>
+            <text class="hex-number" x="190" y="193">2</text><text class="hex-number" x="190" y="172">3</text>
+            <polygon class="hex-selected" points="180,213 210,196 240,213 240,247 210,264 180,247"/>
+            <text class="hex-number" x="210" y="209">2</text><text class="hex-number" x="230" y="223">3</text>
+            <text class="hex-number" x="230" y="244">4</text><text class="hex-number" x="210" y="257">5</text>
+            <text class="hex-number" x="190" y="244">6</text><text class="hex-number" x="190" y="223">1</text>
+            <polygon class="edge-wedge" points="210,196 240,213 225,203"/>
+            <polygon class="edge-wedge" points="240,213 240,247 234,225"/>
+            <polygon class="edge-wedge" points="240,247 210,264 225,253"/>
+            <polygon class="edge-wedge" points="210,264 180,247 195,257"/>
+            <polygon class="edge-wedge-dim" points="180,247 180,213 186,244"/>
+            <polygon class="edge-wedge-dim" points="180,213 210,196 195,209"/>
+            <polygon class="hex-claimed" points="210,111 240,94 270,111 270,145 240,162 210,145"/>
+            <text class="hex-number" x="240" y="107">1</text><text class="hex-number" x="260" y="121">2</text>
+            <text class="hex-number" x="260" y="142">3</text><text class="hex-number" x="240" y="155">4</text>
+            <text class="hex-number" x="220" y="142">5</text><text class="hex-number" x="220" y="121">6</text>
+            <rect class="df-marker" x="254" y="128" width="14" height="8" rx="1"/>
+            <polygon class="hex-fort-captured" points="120,264 150,247 180,264 180,298 150,315 120,298"/>
+            <text class="hex-number" x="150" y="260">6</text><text class="hex-number" x="170" y="274">1</text>
+            <text class="hex-number" x="170" y="295">2</text><text class="hex-number" x="150" y="308">3</text>
+            <text class="hex-number" x="130" y="295">4</text><text class="hex-number" x="130" y="274">5</text>
+            <text class="terrain-icon" x="150" y="283" fill="#e8b830">&#9733;</text>
+            <circle class="army-marker" cx="165" cy="255" r="7"/>
+            <polygon class="hex-blocked" points="150,315 180,298 210,315 210,349 180,366 150,349"/>
+            <line x1="155" y1="318" x2="205" y2="356" stroke="#5a4a5a" stroke-width="2"/>
+            <line x1="205" y1="318" x2="155" y2="356" stroke="#5a4a5a" stroke-width="2"/>
+          </svg>
+        </div>
+        <div class="control-strip">
+          <button class="ctrl-btn">&#8634; Undo</button>
+          <button class="ctrl-btn">&#128221; Journal</button>
+          <button class="ctrl-btn">&#128214; Rules</button>
+          <button class="ctrl-btn">&#9881;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phone with turn summary detail -->
+    <div class="mockup-frame mockup-phone dir-b">
+      <div class="mockup-label">Phone — With Journal Open</div>
+      <div style="height: calc(100% - 28px); display: flex; flex-direction: column;">
+        <div class="status-bar">
+          <div class="status-item status-df"><span>DF:</span><span class="status-value">7/25</span></div>
+          <div class="status-item status-fort"><span>Forts:</span><span class="status-value">2/7</span></div>
+          <div class="status-item status-turn"><span>Turn</span><span class="status-value">14</span></div>
+        </div>
+        <div class="hex-grid-area" style="flex: 1;">
+          <svg viewBox="0 0 375 280" style="width: 100%; height: 100%;">
+            <polygon class="hex-claimed" points="150,60 180,43 210,60 210,94 180,111 150,94"/>
+            <polygon class="hex-claimed" points="120,111 150,94 180,111 180,145 150,162 120,145"/>
+            <polygon class="hex-claimed" points="180,111 210,94 240,111 240,145 210,162 180,145"/>
+            <polygon class="hex-selected" points="180,162 210,145 240,162 240,196 210,213 180,196"/>
+            <polygon class="hex-empty" points="240,162 270,145 300,162 300,196 270,213 240,196"/>
+            <polygon class="hex-mountain" points="240,111 270,94 300,111 300,145 270,162 240,145"/>
+            <text class="terrain-icon" x="270" y="130" fill="#8a8a9a">&#9650;</text>
+          </svg>
+        </div>
+        <!-- Journal panel (slide-up) -->
+        <div class="journal-panel" style="max-height: 280px; overflow-y: auto;">
+          <div class="journal-header">
+            <span>Campaign Journal</span>
+            <button class="journal-close">&times;</button>
+          </div>
+          <textarea class="journal-textarea" placeholder="Dictate or type your entry..."></textarea>
+          <div class="journal-entry">
+            <div class="journal-entry-turn">Turn 12</div>
+            <div class="journal-entry-text">"Eren's scouts report mountains to the northeast. We'll push south toward the fort instead."</div>
+          </div>
+          <div class="journal-entry">
+            <div class="journal-entry-turn">Turn 8</div>
+            <div class="journal-entry-text">"First blood drawn. The Dark Force has taken hold of the eastern ridge."</div>
+          </div>
+          <div class="journal-entry">
+            <div class="journal-entry-turn">Turn 3</div>
+            <div class="journal-entry-text">"The campaign begins. Calosanti stretches before us."</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="direction-notes">
+    <h3>Direction B Notes</h3>
+    <ul>
+      <li>Clear visual separation between status, map, and controls</li>
+      <li>Turn summary strip sits between status bar and map — always visible</li>
+      <li>Journal slides up from bottom, pushing the map up but keeping it partially visible</li>
+      <li>Most predictable layout — each zone is always in the same place</li>
+      <li>Slightly less map space than Direction A, but no overlapping content</li>
+      <li>Best for: clarity-first design that prioritizes readability over immersion</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ==================== DIRECTION C: WAR TABLE ==================== -->
+<section id="dir-c" class="direction-section">
+  <div class="direction-header">
+    <span class="direction-label">Direction C</span>
+    <h2>War Table</h2>
+    <p>Atmospheric borders evoke a commander's tent. Warm wood-toned edges frame the map. The hex grid feels like it's drawn on parchment under lamplight. Maximum thematic immersion.</p>
+  </div>
+
+  <div class="mockup-container">
+    <div class="mockup-frame mockup-phone dir-c">
+      <div class="mockup-label">Phone — War Table Atmosphere</div>
+      <div style="height: calc(100% - 28px); display: flex; flex-direction: column;">
+        <div class="status-bar">
+          <div class="status-item" style="color: #c8a060;">
+            <span style="font-family: 'Cinzel', serif; font-size: 11px;">Dark Force</span>
+            <span class="status-value" style="color: #c0302a; margin-left: 4px;">7</span>
+          </div>
+          <div class="status-item" style="color: #c8a060;">
+            <span style="font-family: 'Cinzel', serif; font-size: 11px;">Forts</span>
+            <span class="status-value" style="color: #e8b830; margin-left: 4px;">2/7</span>
+          </div>
+          <div class="status-item" style="color: #c8a060;">
+            <span style="font-family: 'Cinzel', serif; font-size: 11px;">Turn</span>
+            <span class="status-value" style="margin-left: 4px;">14</span>
+          </div>
+        </div>
+        <div class="hex-grid-area" style="flex: 1;">
+          <svg viewBox="0 0 375 480" style="width: 100%; height: 100%;">
+            <!-- Subtle vignette border -->
+            <defs>
+              <radialGradient id="vignette" cx="50%" cy="50%" r="70%">
+                <stop offset="0%" stop-color="transparent"/>
+                <stop offset="85%" stop-color="transparent"/>
+                <stop offset="100%" stop-color="rgba(26,21,16,0.6)"/>
+              </radialGradient>
+            </defs>
+            <rect width="375" height="480" fill="url(#vignette)"/>
+
+            <polygon class="hex-empty" points="120,70 150,53 180,70 180,104 150,121 120,104"/>
+            <polygon class="hex-empty" points="180,70 210,53 240,70 240,104 210,121 180,104"/>
+            <polygon class="hex-empty" points="60,121 90,104 120,121 120,155 90,172 60,155"/>
+            <polygon class="hex-mountain" points="240,172 270,155 300,172 300,206 270,223 240,206"/>
+            <text class="terrain-icon" x="270" y="190" fill="#8a8a9a">&#9650;</text>
+
+            <polygon class="hex-claimed" points="150,121 180,104 210,121 210,155 180,172 150,155"/>
+            <text class="hex-number" x="180" y="117">3</text><text class="hex-number" x="200" y="131">4</text>
+            <text class="hex-number" x="200" y="152">5</text><text class="hex-number" x="180" y="165">6</text>
+            <text class="hex-number" x="160" y="152">1</text><text class="hex-number" x="160" y="131">2</text>
+
+            <polygon class="hex-claimed" points="120,172 150,155 180,172 180,206 150,223 120,206"/>
+            <text class="hex-number" x="150" y="168">5</text><text class="hex-number" x="170" y="182">6</text>
+            <text class="hex-number" x="170" y="203">1</text><text class="hex-number" x="150" y="216">2</text>
+            <text class="hex-number" x="130" y="203">3</text><text class="hex-number" x="130" y="182">4</text>
+            <circle class="army-marker" cx="165" cy="162" r="7"/>
+
+            <polygon class="hex-claimed" points="180,172 210,155 240,172 240,206 210,223 180,206"/>
+            <text class="hex-number" x="210" y="168">4</text><text class="hex-number" x="230" y="182">5</text>
+            <text class="hex-number" x="230" y="203">6</text><text class="hex-number" x="210" y="216">1</text>
+            <text class="hex-number" x="190" y="203">2</text><text class="hex-number" x="190" y="182">3</text>
+
+            <polygon class="hex-selected" points="180,223 210,206 240,223 240,257 210,274 180,257"/>
+            <text class="hex-number" x="210" y="219">2</text><text class="hex-number" x="230" y="233">3</text>
+            <text class="hex-number" x="230" y="254">4</text><text class="hex-number" x="210" y="267">5</text>
+            <text class="hex-number" x="190" y="254">6</text><text class="hex-number" x="190" y="233">1</text>
+
+            <polygon class="hex-fort-captured" points="120,274 150,257 180,274 180,308 150,325 120,308"/>
+            <text class="terrain-icon" x="150" y="293" fill="#e8b830">&#9733;</text>
+
+            <polygon class="hex-claimed" points="210,121 240,104 270,121 270,155 240,172 210,155"/>
+            <rect class="df-marker" x="254" y="138" width="14" height="8" rx="1"/>
+          </svg>
+        </div>
+        <div class="turn-summary" style="border-color: rgba(139,105,20,0.2);">
+          <strong>Turn 13:</strong> Hex placed. <span class="army-text">+1 Army</span>. <span class="df-text">+1 Dark Force</span>.
+        </div>
+        <div class="control-strip">
+          <button class="ctrl-btn" style="border-color: rgba(139,105,20,0.3);">&#8634; Undo</button>
+          <button class="ctrl-btn" style="border-color: rgba(139,105,20,0.3);">&#128221;</button>
+          <button class="ctrl-btn" style="border-color: rgba(139,105,20,0.3);">&#128214;</button>
+          <button class="ctrl-btn" style="border-color: rgba(139,105,20,0.3);">&#9881;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="direction-notes">
+    <h3>Direction C Notes</h3>
+    <ul>
+      <li>Warm wood-toned gradients at top and bottom create a "frame" around the map</li>
+      <li>Subtle vignette effect on the map edges adds depth and atmosphere</li>
+      <li>Status labels use Cinzel font for thematic consistency</li>
+      <li>Strongest thematic identity of all directions — most "fantasy" feeling</li>
+      <li>Looks best for OBS recordings — the atmospheric framing creates a polished visual</li>
+      <li>Risk: decorative elements may age poorly or feel heavy over time</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ==================== DIRECTION D: MINIMAL FLOATING ==================== -->
+<section id="dir-d" class="direction-section">
+  <div class="direction-header">
+    <span class="direction-label">Direction D</span>
+    <h2>Minimal Floating</h2>
+    <p>Status and controls as floating pills over a clean map. Maximum simplicity. The interface is barely there — just the map and a few floating indicators. iOS-inspired minimalism.</p>
+  </div>
+
+  <div class="mockup-container">
+    <div class="mockup-frame mockup-phone dir-d">
+      <div class="mockup-label">Phone — Minimal Interface</div>
+      <div style="position: relative; height: calc(100% - 28px);">
+        <div class="status-bar" style="justify-content: center; gap: 8px; padding: 12px;">
+          <div class="status-item status-df"><span>DF</span><span class="status-value">7</span></div>
+          <div class="status-item status-fort"><span>Forts</span><span class="status-value">2/7</span></div>
+          <div class="status-item status-turn"><span>T</span><span class="status-value">14</span></div>
+        </div>
+        <div class="hex-grid-area" style="height: 100%;">
+          <svg viewBox="0 0 375 520" style="width: 100%; height: 100%;">
+            <polygon class="hex-empty" points="120,100 150,83 180,100 180,134 150,151 120,134"/>
+            <polygon class="hex-empty" points="180,100 210,83 240,100 240,134 210,151 180,134"/>
+            <polygon class="hex-empty" points="60,151 90,134 120,151 120,185 90,202 60,185"/>
+            <polygon class="hex-mountain" points="240,202 270,185 300,202 300,236 270,253 240,236"/>
+            <text class="terrain-icon" x="270" y="220" fill="#8a8a9a">&#9650;</text>
+
+            <polygon class="hex-claimed" points="150,151 180,134 210,151 210,185 180,202 150,185"/>
+            <text class="hex-number" x="180" y="147">3</text><text class="hex-number" x="200" y="161">4</text>
+            <text class="hex-number" x="200" y="182">5</text><text class="hex-number" x="180" y="195">6</text>
+            <text class="hex-number" x="160" y="182">1</text><text class="hex-number" x="160" y="161">2</text>
+
+            <polygon class="hex-claimed" points="120,202 150,185 180,202 180,236 150,253 120,236"/>
+            <circle class="army-marker" cx="165" cy="192" r="7"/>
+
+            <polygon class="hex-claimed" points="180,202 210,185 240,202 240,236 210,253 180,236"/>
+            <polygon class="hex-selected" points="180,253 210,236 240,253 240,287 210,304 180,287"/>
+          </svg>
+        </div>
+        <div class="control-strip" style="justify-content: center; gap: 8px; padding: 12px;">
+          <button class="ctrl-btn" style="border-radius: 20px; padding: 8px 14px;">&#8634;</button>
+          <button class="ctrl-btn" style="border-radius: 20px; padding: 8px 14px;">&#128221;</button>
+          <button class="ctrl-btn" style="border-radius: 20px; padding: 8px 14px;">&#128214;</button>
+          <button class="ctrl-btn" style="border-radius: 20px; padding: 8px 14px;">&#9881;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="direction-notes">
+    <h3>Direction D Notes</h3>
+    <ul>
+      <li>Status items as individual floating pills — maximum map visibility</li>
+      <li>Control buttons as floating circles — icon-only, minimal footprint</li>
+      <li>Cleanest visual design — the least amount of "app" visible</li>
+      <li>Risk: less discoverable for new users (family members) — icons without labels</li>
+      <li>Risk: floating elements may feel disconnected from the content</li>
+      <li>Best for: experienced users who want maximum immersion and minimum UI</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ==================== DIRECTION E: DESKTOP SIDE PANEL ==================== -->
+<section id="dir-e" class="direction-section">
+  <div class="direction-header">
+    <span class="direction-label">Direction E</span>
+    <h2>Desktop — Side Panel Layout</h2>
+    <p>Desktop and tablet layout with journal/archive as a persistent side panel. The hex grid takes 70% of the screen; the journal and game details live alongside it. The writing session layout.</p>
+  </div>
+
+  <div class="mockup-container">
+    <div class="mockup-frame mockup-desktop dir-b">
+      <div class="mockup-label">Desktop — Journal Side Panel</div>
+      <div class="dir-e-layout" style="height: calc(100% - 28px);">
+        <div class="dir-e-main">
+          <div class="status-bar" style="background: #1e1e32; border-bottom: 1px solid rgba(212,160,64,0.15);">
+            <div class="status-item status-df"><span>Dark Force:</span><span class="status-value">7/25</span></div>
+            <div class="status-item status-fort"><span>Forts:</span><span class="status-value">2/7</span></div>
+            <div class="status-item status-turn"><span>Turn</span><span class="status-value">14</span></div>
+          </div>
+          <div class="hex-grid-area" style="flex: 1; background: #1a1a2e;">
+            <svg viewBox="0 0 620 420" style="width: 100%; height: 100%;">
+              <polygon class="hex-empty" points="180,60 220,37 260,60 260,106 220,129 180,106"/>
+              <polygon class="hex-empty" points="260,60 300,37 340,60 340,106 300,129 260,106"/>
+              <polygon class="hex-empty" points="340,60 380,37 420,60 420,106 380,129 340,106"/>
+              <polygon class="hex-empty" points="100,129 140,106 180,129 180,175 140,198 100,175"/>
+              <polygon class="hex-empty" points="420,60 460,37 500,60 500,106 460,129 420,106"/>
+              <polygon class="hex-mountain" points="380,198 420,175 460,198 460,244 420,267 380,244"/>
+              <text class="terrain-icon" x="420" y="222" fill="#8a8a9a" style="font-size:18px">&#9650;</text>
+              <polygon class="hex-fort" points="460,267 500,244 540,267 540,313 500,336 460,313"/>
+              <text class="terrain-icon" x="500" y="292" fill="#7a7a8a" style="font-size:18px">&#9733;</text>
+
+              <polygon class="hex-claimed" points="220,129 260,106 300,129 300,175 260,198 220,175"/>
+              <text class="hex-number" x="260" y="122" style="font-size:11px">3</text>
+              <text class="hex-number" x="286" y="140" style="font-size:11px">4</text>
+              <text class="hex-number" x="286" y="166" style="font-size:11px">5</text>
+              <text class="hex-number" x="260" y="184" style="font-size:11px">6</text>
+              <text class="hex-number" x="234" y="166" style="font-size:11px">1</text>
+              <text class="hex-number" x="234" y="140" style="font-size:11px">2</text>
+
+              <polygon class="hex-claimed" points="180,198 220,175 260,198 260,244 220,267 180,244"/>
+              <circle class="army-marker" cx="240" cy="185" r="9"/>
+              <polygon class="hex-claimed" points="260,198 300,175 340,198 340,244 300,267 260,244"/>
+              <polygon class="hex-claimed" points="300,129 340,106 380,129 380,175 340,198 300,175"/>
+              <rect class="df-marker" x="366" y="152" width="18" height="10" rx="2"/>
+              <polygon class="hex-selected" points="260,267 300,244 340,267 340,313 300,336 260,313"/>
+              <polygon class="hex-fort-captured" points="180,313 220,290 260,313 260,359 220,382 180,359"/>
+              <text class="terrain-icon" x="220" y="338" fill="#e8b830" style="font-size:18px">&#9733;</text>
+              <circle class="army-marker" cx="240" cy="303" r="9"/>
+            </svg>
+          </div>
+          <div class="turn-summary" style="background: #1e1e32;">
+            <strong>Turn 13:</strong> Hex placed. <span class="army-text">+1 Army</span>. <span class="df-text">+1 Dark Force</span>. Mountain adjacent — source safe.
+          </div>
+          <div class="control-strip" style="background: #1e1e32; border-top: 1px solid rgba(212,160,64,0.15);">
+            <button class="ctrl-btn">&#8634; Undo</button>
+            <button class="ctrl-btn">&#127922; Digital Dice</button>
+            <button class="ctrl-btn">&#128214; Rules</button>
+            <button class="ctrl-btn">&#9881; Settings</button>
+          </div>
+        </div>
+        <div class="dir-e-side">
+          <div class="dir-e-side-header">Campaign Journal</div>
+          <div class="dir-e-side-content">
+            <textarea class="journal-textarea" placeholder="Dictate or type your entry..." style="margin-bottom: 12px;"></textarea>
+            <div class="journal-entry">
+              <div class="journal-entry-turn">Turn 12</div>
+              <div class="journal-entry-text">"Eren's scouts report mountains to the northeast. We'll push south toward the fort instead. The men are weary but the objective is in sight."</div>
+            </div>
+            <div class="journal-entry">
+              <div class="journal-entry-turn">Turn 8</div>
+              <div class="journal-entry-text">"First blood drawn. The Dark Force has taken hold of the eastern ridge. Two armies lost before we could reinforce."</div>
+            </div>
+            <div class="journal-entry">
+              <div class="journal-entry-turn">Turn 5</div>
+              <div class="journal-entry-text">"Fort Calosanti secured! The garrison raises our banner. But the cost was high — blocked approaches from the north mean we must find another path."</div>
+            </div>
+            <div class="journal-entry">
+              <div class="journal-entry-turn">Turn 3</div>
+              <div class="journal-entry-text">"The campaign begins. Calosanti stretches before us, mountains in the distance. Eren gives the order to move southeast."</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="direction-notes">
+    <h3>Direction E Notes</h3>
+    <ul>
+      <li>Desktop layout: hex grid (70%) + journal side panel (30%)</li>
+      <li>Journal is always visible during desktop play — no need to toggle</li>
+      <li>Side panel scrolls independently of the map</li>
+      <li>This is the "writing session" layout from Journey 3 — map and journal side by side</li>
+      <li>On phone, this collapses to Direction A/B/C layout with journal as slide-up overlay</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ==================== DIRECTION F: GAME OVER ==================== -->
+<section id="dir-f" class="direction-section">
+  <div class="direction-header">
+    <span class="direction-label">Direction F</span>
+    <h2>Game Over — Quiet Satisfaction</h2>
+    <p>The game-over moment. Understated, not dramatic. A clean summary, the final map, a path forward. Closing a chapter.</p>
+  </div>
+
+  <div class="mockup-container">
+    <div class="mockup-frame mockup-phone">
+      <div class="mockup-label">Phone — Victory</div>
+      <div class="game-over-screen">
+        <div class="game-over-title">Campaign Complete</div>
+        <div class="game-over-subtitle">Calosanti Region — Victory</div>
+        <!-- Mini map thumbnail -->
+        <svg viewBox="0 0 200 140" style="width: 200px; height: 140px; margin-bottom: 20px; opacity: 0.7;">
+          <polygon class="hex-claimed" points="80,30 100,18 120,30 120,52 100,64 80,52" style="opacity:0.6"/>
+          <polygon class="hex-claimed" points="60,52 80,40 100,52 100,74 80,86 60,74" style="opacity:0.6"/>
+          <polygon class="hex-claimed" points="100,52 120,40 140,52 140,74 120,86 100,74" style="opacity:0.6"/>
+          <polygon class="hex-claimed" points="80,74 100,62 120,74 120,96 100,108 80,96" style="opacity:0.6"/>
+          <polygon class="hex-fort-captured" points="60,96 80,84 100,96 100,118 80,130 60,118" style="opacity:0.6"/>
+          <polygon class="hex-blocked" points="120,74 140,62 160,74 160,96 140,108 120,96" style="opacity:0.4"/>
+          <polygon class="hex-claimed" points="120,30 140,18 160,30 160,52 140,64 120,52" style="opacity:0.6"/>
+        </svg>
+        <div class="game-over-stats">
+          <div class="game-over-stat">
+            <div class="game-over-stat-label">Turns</div>
+            <div class="game-over-stat-value">47</div>
+          </div>
+          <div class="game-over-stat">
+            <div class="game-over-stat-label">Forts</div>
+            <div class="game-over-stat-value" style="color: #e8b830;">4/7</div>
+          </div>
+          <div class="game-over-stat">
+            <div class="game-over-stat-label">Dark Force</div>
+            <div class="game-over-stat-value" style="color: #c0302a;">18</div>
+          </div>
+          <div class="game-over-stat">
+            <div class="game-over-stat-label">Journal</div>
+            <div class="game-over-stat-value">6</div>
+          </div>
+        </div>
+        <div class="game-over-actions">
+          <button class="game-over-btn game-over-btn-primary">New Campaign</button>
+          <button class="game-over-btn game-over-btn-secondary">View Archive</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mockup-frame mockup-phone">
+      <div class="mockup-label">Phone — Defeat</div>
+      <div class="game-over-screen">
+        <div class="game-over-title" style="color: #9a8070;">Campaign Lost</div>
+        <div class="game-over-subtitle">Calosanti Region — Dark Force Prevailed</div>
+        <svg viewBox="0 0 200 140" style="width: 200px; height: 140px; margin-bottom: 20px; opacity: 0.5;">
+          <polygon class="hex-claimed" points="80,30 100,18 120,30 120,52 100,64 80,52" style="opacity:0.4"/>
+          <polygon class="hex-blocked" points="60,52 80,40 100,52 100,74 80,86 60,74" style="opacity:0.5"/>
+          <polygon class="hex-claimed" points="100,52 120,40 140,52 140,74 120,86 100,74" style="opacity:0.4"/>
+          <polygon class="hex-blocked" points="80,74 100,62 120,74 120,96 100,108 80,96" style="opacity:0.5"/>
+          <polygon class="hex-blocked" points="120,74 140,62 160,74 160,96 140,108 120,96" style="opacity:0.5"/>
+        </svg>
+        <div class="game-over-stats">
+          <div class="game-over-stat">
+            <div class="game-over-stat-label">Turns</div>
+            <div class="game-over-stat-value">62</div>
+          </div>
+          <div class="game-over-stat">
+            <div class="game-over-stat-label">Forts</div>
+            <div class="game-over-stat-value" style="color: #7a7a8a;">2/7</div>
+          </div>
+          <div class="game-over-stat">
+            <div class="game-over-stat-label">Dark Force</div>
+            <div class="game-over-stat-value" style="color: #c0302a;">25</div>
+          </div>
+          <div class="game-over-stat">
+            <div class="game-over-stat-label">Journal</div>
+            <div class="game-over-stat-value">3</div>
+          </div>
+        </div>
+        <div class="game-over-actions">
+          <button class="game-over-btn game-over-btn-primary">New Campaign</button>
+          <button class="game-over-btn game-over-btn-secondary">View Archive</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="direction-notes">
+    <h3>Direction F Notes</h3>
+    <ul>
+      <li>Understated game-over — no fireworks, no dramatic animations</li>
+      <li>Thumbnail of the final map state as a visual memory of the campaign</li>
+      <li>Victory: warm gold title. Defeat: muted tone, same layout, same dignity</li>
+      <li>Four key stats: turns played, forts captured, Dark Force count, journal entries</li>
+      <li>Two clear actions: start a new campaign or view the archive</li>
+      <li>"Closing a chapter in a book" — quiet satisfaction</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ==================== DIRECTION G: ARCHIVE ==================== -->
+<section id="dir-g" class="direction-section">
+  <div class="direction-header">
+    <span class="direction-label">Direction G</span>
+    <h2>Campaign Archive — Trophy Case</h2>
+    <p>Browsing past campaigns. Each game is a chapter heading — date, map, outcome, journal count. The archive feels like a personal war journal, not a file list.</p>
+  </div>
+
+  <div class="mockup-container">
+    <div class="mockup-frame mockup-phone dir-b">
+      <div class="mockup-label">Phone — Archive List</div>
+      <div style="height: calc(100% - 28px); display: flex; flex-direction: column; background: #1a1a2e;">
+        <div style="padding: 16px 12px 8px; border-bottom: 1px solid rgba(212,160,64,0.15);">
+          <div style="font-family: 'Cinzel', serif; font-size: 20px; color: #d4a040;">Campaign Archive</div>
+          <div style="font-family: 'Inter', sans-serif; font-size: 12px; color: #9a9080; margin-top: 4px;">12 campaigns fought</div>
+        </div>
+        <div style="flex: 1; overflow-y: auto; padding: 12px;">
+          <div class="archive-card">
+            <div class="archive-card-header">
+              <span class="archive-card-map">Calosanti Region</span>
+              <span class="archive-card-result result-win">Victory</span>
+            </div>
+            <div class="archive-card-meta">
+              <span>Apr 10, 2026</span>
+              <span>47 turns</span>
+              <span>6 journal entries</span>
+            </div>
+          </div>
+          <div class="archive-card">
+            <div class="archive-card-header">
+              <span class="archive-card-map">Calosanti Region</span>
+              <span class="archive-card-result result-loss">Defeat</span>
+            </div>
+            <div class="archive-card-meta">
+              <span>Apr 8, 2026</span>
+              <span>62 turns</span>
+              <span>3 journal entries</span>
+            </div>
+          </div>
+          <div class="archive-card">
+            <div class="archive-card-header">
+              <span class="archive-card-map">Calosanti Region</span>
+              <span class="archive-card-result result-win">Victory</span>
+            </div>
+            <div class="archive-card-meta">
+              <span>Apr 6, 2026</span>
+              <span>53 turns</span>
+              <span>8 journal entries</span>
+            </div>
+          </div>
+          <div class="archive-card">
+            <div class="archive-card-header">
+              <span class="archive-card-map">Calosanti Region</span>
+              <span class="archive-card-result result-win">Victory</span>
+            </div>
+            <div class="archive-card-meta">
+              <span>Apr 4, 2026</span>
+              <span>41 turns</span>
+              <span>0 journal entries</span>
+            </div>
+          </div>
+          <div class="archive-card">
+            <div class="archive-card-header">
+              <span class="archive-card-map">Calosanti Region</span>
+              <span class="archive-card-result result-loss">Defeat</span>
+            </div>
+            <div class="archive-card-meta">
+              <span>Apr 2, 2026</span>
+              <span>58 turns</span>
+              <span>2 journal entries</span>
+            </div>
+          </div>
+          <div class="archive-card">
+            <div class="archive-card-header">
+              <span class="archive-card-map">Calosanti Region</span>
+              <span class="archive-card-result result-win">Victory</span>
+            </div>
+            <div class="archive-card-meta">
+              <span>Mar 30, 2026</span>
+              <span>45 turns</span>
+              <span>5 journal entries</span>
+            </div>
+          </div>
+        </div>
+        <!-- Bottom nav -->
+        <div class="control-strip" style="background: #1e1e32; border-top: 1px solid rgba(212,160,64,0.15); justify-content: space-around;">
+          <button class="ctrl-btn">&#127922; Play</button>
+          <button class="ctrl-btn" style="background: rgba(212,160,64,0.2); border-color: #d4a040; color: #f0c040;">&#128220; Archive</button>
+          <button class="ctrl-btn">&#9881; Settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="direction-notes">
+    <h3>Direction G Notes</h3>
+    <ul>
+      <li>Each campaign is a card with map name, outcome (victory/defeat), date, turns, and journal count</li>
+      <li>Victory in green, defeat in muted red — not dramatic, just factual</li>
+      <li>Simple bottom navigation: Play (active game or new), Archive, Settings</li>
+      <li>Tapping a card opens the game detail view (final map state + journal entries)</li>
+      <li>Future: map thumbnails could be added to each card for visual memory</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ==================== DIRECTION H: JOURNAL CLOSE-UP ==================== -->
+<section id="dir-h" class="direction-section">
+  <div class="direction-header">
+    <span class="direction-label">Direction H</span>
+    <h2>Journal — Quick Capture Close-Up</h2>
+    <p>The journal panel in action. Open fast, dictate, close. The map stays visible. Two interaction styles: quick slide-up on phone, persistent side panel on desktop.</p>
+  </div>
+
+  <div class="mockup-container">
+    <div class="mockup-frame mockup-phone dir-b">
+      <div class="mockup-label">Phone — Journal Slide-Up (Half Screen)</div>
+      <div style="height: calc(100% - 28px); display: flex; flex-direction: column;">
+        <div class="status-bar">
+          <div class="status-item status-df"><span>DF:</span><span class="status-value">7/25</span></div>
+          <div class="status-item status-fort"><span>Forts:</span><span class="status-value">2/7</span></div>
+          <div class="status-item status-turn"><span>Turn</span><span class="status-value">14</span></div>
+        </div>
+        <!-- Compressed map view -->
+        <div class="hex-grid-area" style="flex: 1; min-height: 200px;">
+          <svg viewBox="0 0 375 200" style="width: 100%; height: 100%;">
+            <polygon class="hex-claimed" points="150,40 180,23 210,40 210,74 180,91 150,74"/>
+            <polygon class="hex-claimed" points="120,91 150,74 180,91 180,125 150,142 120,125"/>
+            <polygon class="hex-claimed" points="180,91 210,74 240,91 240,125 210,142 180,125"/>
+            <polygon class="hex-selected" points="180,142 210,125 240,142 240,176 210,193 180,176"/>
+            <polygon class="hex-mountain" points="240,142 270,125 300,142 300,176 270,193 240,176"/>
+            <text class="terrain-icon" x="270" y="160" fill="#8a8a9a">&#9650;</text>
+            <polygon class="hex-fort-captured" points="120,142 150,125 180,142 180,176 150,193 120,176"/>
+            <text class="terrain-icon" x="150" y="162" fill="#e8b830">&#9733;</text>
+          </svg>
+        </div>
+        <!-- Journal panel -->
+        <div class="journal-panel" style="flex: 0 0 auto; max-height: 320px; overflow-y: auto;">
+          <div class="journal-header">
+            <span>Campaign Journal</span>
+            <button class="journal-close">&times;</button>
+          </div>
+          <div style="position: relative; margin-bottom: 8px;">
+            <textarea class="journal-textarea" placeholder="Dictate or type your entry..." style="min-height: 48px;">Eren's supply lines were severed by the mountain pass. The fort holds, but reinforcements won't arrive in time.</textarea>
+            <div style="text-align: right; margin-top: 4px;">
+              <button class="ctrl-btn" style="font-size: 11px; padding: 4px 12px;">Save Entry</button>
+            </div>
+          </div>
+          <div style="font-family: 'Inter', sans-serif; font-size: 10px; color: #9a9080; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;">Previous entries</div>
+          <div class="journal-entry">
+            <div class="journal-entry-turn">Turn 12</div>
+            <div class="journal-entry-text">"Eren's scouts report mountains to the northeast. We'll push south toward the fort instead."</div>
+          </div>
+          <div class="journal-entry">
+            <div class="journal-entry-turn">Turn 8</div>
+            <div class="journal-entry-text">"First blood drawn. The Dark Force has taken hold of the eastern ridge."</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="direction-notes">
+    <h3>Direction H Notes</h3>
+    <ul>
+      <li>Journal slides up from bottom, taking ~50% of screen height</li>
+      <li>Map compresses but stays visible above — player can reference game state while writing</li>
+      <li>Textarea is immediately focused and ready for dictation input</li>
+      <li>"Save Entry" button — one tap to save, panel stays open for review</li>
+      <li>Previous entries visible below the input area for context recovery</li>
+      <li>Close button (X) dismisses journal — map returns to full size</li>
+      <li>On desktop: this becomes the persistent side panel (Direction E)</li>
+    </ul>
+  </div>
+</section>
+
+<div style="text-align: center; padding: 48px 24px; color: #9a9080; font-size: 14px;">
+  <p style="font-family: 'Cinzel', serif; color: #d4a040; font-size: 16px; margin-bottom: 8px;">End of Design Directions</p>
+  <p>Review each direction and note which elements resonate. Directions can be mixed and matched.</p>
+</div>
+
+</body>
+</html>
