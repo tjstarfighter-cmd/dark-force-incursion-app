@@ -1,6 +1,7 @@
 import type { GameSnapshot } from '../types/game.types'
 import type { HexCoord, HexState, HexEdge } from '../types/hex.types'
 import { HexStatus } from '../types/hex.types'
+import { TerrainType } from '../types/terrain.types'
 import { getNeighborAtEdge, getOppositeEdge, hexToKey } from './hexMath'
 
 export interface DarkForceUpdate {
@@ -129,6 +130,11 @@ export function resolveDarkForceEscalation(
       const candidateKey = hexToKey(candidateCoord)
 
       if (!mapBounds.has(candidateKey)) continue
+      // Skip mountain hexes
+      const mapHex = snapshot.mapDefinition.hexes.find(
+        h => h.coord.q === candidateCoord.q && h.coord.r === candidateCoord.r
+      )
+      if (mapHex?.terrain === TerrainType.Mountain) continue
       const existing = newHexes.get(candidateKey)
       if (existing && existing.status !== HexStatus.Empty) continue
 

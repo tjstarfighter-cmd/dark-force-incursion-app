@@ -39,6 +39,8 @@ function findNextClockwisePosition(
     const candidateCoord = getNeighborAtEdge(sourceCoord, candidateEdge)
     const candidateKey = hexToKey(candidateCoord)
     if (!mapBounds.has(candidateKey)) continue
+    // Skip mountain hexes — can't place on mountains
+    if (isTargetMountain(state.mapDefinition, candidateCoord)) continue
     const existing = state.hexes.get(candidateKey)
     if (!existing || existing.status === HexStatus.Empty) {
       return { edge: candidateEdge, coord: candidateCoord }
