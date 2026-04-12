@@ -1,16 +1,23 @@
 <script lang="ts">
   import type { HexCoord, HexEdge } from './types/hex.types'
   import { HexStatus } from './types/hex.types'
+  import { GameStatus } from './types/game.types'
+  import { hexToKey } from './engine/hexMath'
   import HexGrid from './components/hex-grid/HexGrid.svelte'
   import DiceInput from './components/dice/DiceInput.svelte'
   import HomeView from './components/game/HomeView.svelte'
+  import GameOver from './components/game/GameOver.svelte'
   import StatusBar from './components/game/StatusBar.svelte'
   import ControlStrip from './components/game/ControlStrip.svelte'
   import TurnSummary from './components/game/TurnSummary.svelte'
   import { CALOSANTI_MAP } from './maps/calosanti'
-  import { startGame, dispatch, gameState } from './stores/gameStore.svelte'
+  import { startGame, dispatch, gameState, tryResumeGame } from './stores/gameStore.svelte'
 
   const snapshot = $derived(gameState.snapshot)
+  const isInitialized = $derived(gameState.isInitialized)
+
+  // Try to resume a saved game on app load
+  tryResumeGame()
 
   // Dice input state
   let diceInputVisible = $state(false)
@@ -23,6 +30,8 @@
   // Turn summary state
   let lastTurnNumber = $state(0)
   let lastArmiesGained = $state(0)
+  let lastDarkForceGained = $state(0)
+  let lastHexBlocked = $state(false)
   let lastSourceBlocked = $state(false)
   let showTurnSummary = $state(false)
 
@@ -55,6 +64,7 @@
         // Determine what happened this turn
         let armiesGained = 0
         let sourceBlocked = false
+        let hexBlocked = false
 
         for (const [key, state] of newSnapshot.hexes) {
           const prev = prevSnapshot?.hexes.get(key)
@@ -62,19 +72,29 @@
           const prevArmyCount = prev?.armies?.length ?? 0
           const newArmyCount = state.armies?.length ?? 0
           armiesGained += Math.max(0, newArmyCount - prevArmyCount)
-          // Check if source was blocked
-          if (prev?.status === HexStatus.Claimed && state.status === HexStatus.Blocked) {
+          // Check if source was blocked (off-map/terrain — source hex changes from claimed to blocked)
+          if (key === hexToKey(pendingSourceCoord!) && prev?.status === HexStatus.Claimed && state.status === HexStatus.Blocked) {
             sourceBlocked = true
           }
-          // Detect newly placed hex for animation
+          // Check if a new blocked hex was placed (occupied target clockwise placement)
+          if (!prev && state.status === HexStatus.Blocked) {
+            hexBlocked = true
+          }
+          // Detect newly placed/changed hex for animation
           if (!prev || prev.status !== state.status) {
             lastPlacedHexKey = key
             setTimeout(() => { lastPlacedHexKey = null }, 700)
           }
         }
 
+        // Dark force gained this turn
+        const prevDF = prevSnapshot?.darkForceTally ?? 0
+        const newDF = newSnapshot.darkForceTally
+
         // Army count is per-edge, but each army is a pair — divide by 2
         lastArmiesGained = Math.floor(armiesGained / 2)
+        lastDarkForceGained = newDF - prevDF
+        lastHexBlocked = hexBlocked
         lastSourceBlocked = sourceBlocked
         lastTurnNumber = newSnapshot.turnNumber
         showTurnSummary = true
@@ -94,10 +114,13 @@
   }
 </script>
 
-{#if snapshot}
+{#if !isInitialized}
+  <!-- Waiting for persistence check -->
+{:else if snapshot}
   <StatusBar
     turnNumber={snapshot.turnNumber}
     darkForceTally={snapshot.darkForceTally}
+    darkForceLimit={snapshot.mapDefinition.darkForceLimit}
     fortsCaptured={snapshot.fortsCaptured}
     totalForts={snapshot.totalForts}
   />
@@ -114,6 +137,8 @@
     <TurnSummary
       turnNumber={lastTurnNumber}
       armiesGained={lastArmiesGained}
+      darkForceGained={lastDarkForceGained}
+      hexBlocked={lastHexBlocked}
       sourceBlocked={lastSourceBlocked}
     />
   {/if}
@@ -125,6 +150,17 @@
     onRoll={handleRoll}
     onClose={handleDiceClose}
   />
+
+  {#if snapshot.status !== GameStatus.InProgress}
+    <GameOver
+      status={snapshot.status}
+      turnNumber={snapshot.turnNumber}
+      fortsCaptured={snapshot.fortsCaptured}
+      totalForts={snapshot.totalForts}
+      darkForceTally={snapshot.darkForceTally}
+      onNewCampaign={handleStartGame}
+    />
+  {/if}
 {:else}
   <HomeView onStartGame={handleStartGame} />
 {/if}

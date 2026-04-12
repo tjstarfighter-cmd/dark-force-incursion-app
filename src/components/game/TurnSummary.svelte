@@ -2,18 +2,22 @@
   interface Props {
     turnNumber: number
     armiesGained: number
+    darkForceGained: number
+    hexBlocked: boolean
     sourceBlocked: boolean
   }
 
-  let { turnNumber, armiesGained, sourceBlocked }: Props = $props()
+  let { turnNumber, armiesGained, darkForceGained, hexBlocked, sourceBlocked }: Props = $props()
 
   let expanded = $state(false)
 
   let summaryText = $derived.by(() => {
     const parts: string[] = []
     if (armiesGained > 0) parts.push(`+${armiesGained} Army`)
+    if (darkForceGained > 0) parts.push(`+${darkForceGained} DF`)
+    if (hexBlocked) parts.push('Hex blocked')
     if (sourceBlocked) parts.push('Source blocked')
-    if (parts.length === 0) parts.push('No armies')
+    if (parts.length === 0) parts.push('No events')
     return `Turn ${turnNumber}: ${parts.join(', ')}`
   })
 </script>
@@ -24,10 +28,10 @@
   <span class="summary-text">{summaryText}</span>
   {#if expanded}
     <div class="detail">
-      <p>Armies gained this turn: {armiesGained}</p>
-      {#if sourceBlocked}
-        <p>Source hex was blocked (off-map or terrain)</p>
-      {/if}
+      <p>Armies gained: {armiesGained}</p>
+      {#if darkForceGained > 0}<p>Dark Force spawned: {darkForceGained}</p>{/if}
+      {#if hexBlocked}<p>Hex blocked (occupied target)</p>{/if}
+      {#if sourceBlocked}<p>Source blocked (off-map or terrain)</p>{/if}
     </div>
   {/if}
 </div>

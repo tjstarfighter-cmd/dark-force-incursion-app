@@ -2,16 +2,27 @@
   interface Props {
     turnNumber: number
     darkForceTally: number
+    darkForceLimit: number
     fortsCaptured: number
     totalForts: number
   }
 
-  let { turnNumber, darkForceTally, fortsCaptured, totalForts }: Props = $props()
+  let { turnNumber, darkForceTally, darkForceLimit, fortsCaptured, totalForts }: Props = $props()
+
+  // Interpolate color from gray to red as Dark Force approaches limit
+  let dfColor = $derived.by(() => {
+    const ratio = Math.min(darkForceTally / darkForceLimit, 1)
+    // From #9a9080 (gray) to #8b1a1a (dark force red)
+    const r = Math.round(154 + (139 - 154) * ratio)
+    const g = Math.round(144 + (26 - 144) * ratio)
+    const b = Math.round(128 + (26 - 128) * ratio)
+    return `rgb(${r},${g},${b})`
+  })
 </script>
 
 <div class="status-bar" aria-live="polite">
   <span class="status-item">Turn {turnNumber}</span>
-  <span class="status-item df-tally">Dark Force: {darkForceTally}</span>
+  <span class="status-item" style="color: {dfColor}">DF: {darkForceTally}/{darkForceLimit}</span>
   <span class="status-item">Forts: {fortsCaptured}/{totalForts}</span>
 </div>
 
@@ -39,10 +50,6 @@
     font-size: var(--text-caption);
     color: var(--color-text-primary);
     white-space: nowrap;
-  }
-
-  .df-tally {
-    color: var(--color-text-secondary);
   }
 
   @media (min-width: 1024px) {

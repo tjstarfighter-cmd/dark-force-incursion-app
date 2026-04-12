@@ -4,14 +4,16 @@ import type { MapDefinition } from '../types/map.types'
 import type { HexState } from '../types/hex.types'
 import { HexStatus } from '../types/hex.types'
 import { TurnStack } from '../engine/turnStack'
+import type { TurnEntry } from '../engine/turnStack'
 import { resolveAction } from '../engine/ruleEngine'
 import { hexToKey } from '../engine/hexMath'
+import { saveGame, loadActiveGame, deleteActiveGame } from '../persistence/gameRepository'
 
 let currentGame = $state<GameSnapshot | null>(null)
 let turnStack = $state(new TurnStack())
+let initialized = $state(false)
 
 export function startGame(mapDef: MapDefinition): void {
-  // Create initial hex states — starting hex is claimed with no numbers
   const hexes = new Map<string, HexState>()
   const startKey = hexToKey(mapDef.startingHex)
   hexes.set(startKey, {
@@ -40,6 +42,10 @@ export function startGame(mapDef: MapDefinition): void {
   })
 
   currentGame = initialSnapshot
+  initialized = true
+
+  // Auto-save initial state
+  autoSave()
 }
 
 export function dispatch(action: GameAction): { ok: boolean; reason?: string } {
@@ -61,18 +67,57 @@ export function dispatch(action: GameAction): { ok: boolean; reason?: string } {
   })
 
   currentGame = result.snapshot
+
+  // Auto-save after each turn
+  autoSave()
+
   return { ok: true }
 }
 
+/**
+ * Restore a game from persisted state.
+ */
+export function restoreGame(snapshot: GameSnapshot, turnEntries: TurnEntry[]): void {
+  turnStack = new TurnStack()
+  for (const entry of turnEntries) {
+    turnStack.push(entry)
+  }
+  currentGame = snapshot
+  initialized = true
+}
+
+/**
+ * Try to load and restore an active game from IndexedDB.
+ * Returns true if a game was restored.
+ */
+export async function tryResumeGame(): Promise<boolean> {
+  try {
+    const saved = await loadActiveGame()
+    if (saved) {
+      restoreGame(saved.snapshot, saved.turnEntries)
+      return true
+    }
+  } catch (e) {
+    console.warn('Failed to load saved game:', e)
+  }
+  initialized = true
+  return false
+}
+
+function autoSave(): void {
+  if (!currentGame) return
+  saveGame(currentGame, turnStack.getAll()).catch(e => {
+    console.warn('Auto-save failed:', e)
+  })
+}
+
 export function getCurrentSnapshot(): GameSnapshot | null {
-  // Return the $state variable directly so Svelte's reactivity tracks it
-  // when used inside $derived() in components
   return currentGame
 }
 
-// Direct reactive export for component consumption via $derived
 export const gameState = {
   get snapshot() { return currentGame },
+  get isInitialized() { return initialized },
 }
 
 export function getTurnStack(): TurnStack {

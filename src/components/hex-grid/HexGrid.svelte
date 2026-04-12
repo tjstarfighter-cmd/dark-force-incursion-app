@@ -8,6 +8,7 @@
   import HexCell from './HexCell.svelte'
   import EdgeSelector from './EdgeSelector.svelte'
   import ArmyMarker from './ArmyMarker.svelte'
+  import DarkForceMarker from './DarkForceMarker.svelte'
 
   interface Props {
     mapDefinition: MapDefinition
@@ -126,6 +127,48 @@
         if (!neighborGeo) continue
 
         // Compute number positions for both sides
+        const c1a = geo.corners[(edgeIndex + CORNER_OFFSET) % 6]
+        const c1b = geo.corners[(edgeIndex + CORNER_OFFSET + 1) % 6]
+        const edgeMid1X = (c1a.x + c1b.x) / 2
+        const edgeMid1Y = (c1a.y + c1b.y) / 2
+        const pos1x = geo.cx + (edgeMid1X - geo.cx) * 0.65
+        const pos1y = geo.cy + (edgeMid1Y - geo.cy) * 0.65
+
+        const theirEdge = getOppositeEdge(edgeIndex as 0|1|2|3|4|5)
+        const c2a = neighborGeo.corners[(theirEdge + CORNER_OFFSET) % 6]
+        const c2b = neighborGeo.corners[(theirEdge + CORNER_OFFSET + 1) % 6]
+        const edgeMid2X = (c2a.x + c2b.x) / 2
+        const edgeMid2Y = (c2a.y + c2b.y) / 2
+        const pos2x = neighborGeo.cx + (edgeMid2X - neighborGeo.cx) * 0.65
+        const pos2y = neighborGeo.cy + (edgeMid2Y - neighborGeo.cy) * 0.65
+
+        pairs.push({ x1: pos1x, y1: pos1y, x2: pos2x, y2: pos2y, pairKey: pk })
+      }
+    }
+    return pairs
+  })
+
+  // Reactive: compute dark force marker pairs (same pattern as army pairs)
+  let darkForcePairs = $derived.by(() => {
+    if (!hexStates) return []
+    const pairs: Array<{ x1: number; y1: number; x2: number; y2: number; pairKey: string }> = []
+    const processed = new Set<string>()
+
+    for (const [key, hex] of hexStates) {
+      if (!hex.darkForce || hex.darkForce.length === 0) continue
+      const geo = hexGeoLookup.get(key)
+      if (!geo) continue
+
+      for (const edgeIndex of hex.darkForce) {
+        const neighborCoord = getNeighborAtEdge(hex.coord, edgeIndex as 0|1|2|3|4|5)
+        const neighborKey = hexToKey(neighborCoord)
+        const pk = key < neighborKey ? `df:${key}|${neighborKey}` : `df:${neighborKey}|${key}`
+        if (processed.has(pk)) continue
+        processed.add(pk)
+
+        const neighborGeo = hexGeoLookup.get(neighborKey)
+        if (!neighborGeo) continue
+
         const c1a = geo.corners[(edgeIndex + CORNER_OFFSET) % 6]
         const c1b = geo.corners[(edgeIndex + CORNER_OFFSET + 1) % 6]
         const edgeMid1X = (c1a.x + c1b.x) / 2
@@ -382,6 +425,17 @@
       <!-- Army markers spanning hex pairs -->
       {#each armyPairs as pair (pair.pairKey)}
         <ArmyMarker
+          x1={pair.x1}
+          y1={pair.y1}
+          x2={pair.x2}
+          y2={pair.y2}
+          radius={HEX_RADIUS}
+        />
+      {/each}
+
+      <!-- Dark Force markers spanning hex pairs -->
+      {#each darkForcePairs as pair (pair.pairKey)}
+        <DarkForceMarker
           x1={pair.x1}
           y1={pair.y1}
           x2={pair.x2}

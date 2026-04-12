@@ -2,80 +2,97 @@ import type { MapDefinition, MapHex } from '../types/map.types'
 import { TerrainType } from '../types/terrain.types'
 
 /**
- * Calosanti Region map from the Mountain Region Maps Series 1 (page 1).
+ * Calosanti Region map from the Mountain Region Maps Series 1 (page 17 of Omnibus).
  *
- * Coordinate system: flat-top axial (q, r)
- * - q: column (0 = leftmost), increases right
- * - r: row (0 = topmost), increases down
- * - Odd q columns are visually offset down by half a hex height
+ * The map is a 15x18 RECTANGULAR flat-top hex grid.
+ * Visual positions (col, row) are converted to axial (q, r) coordinates:
+ *   q = col
+ *   r = row - floor(col / 2)
+ * This ensures the grid renders as a rectangle, not a diamond.
  *
- * Grid: approximately 10 columns x 13 rows
- * Mountains form natural borders along top-left, bottom-left, and bottom-right.
- * The playable interior is the open area between the mountain ranges.
- *
- * NOTE: This digitization is based on visual analysis of the PDF map.
- * Positions should be verified against the physical map during playtesting.
+ * NOTE: Mountain and fort positions use VISUAL (col, row) coordinates below,
+ * converted to axial in buildHexes(). Verify against the physical map.
  */
 
-// Mountain hex positions (borders of the playable area)
-const MOUNTAIN_HEXES: Array<{ q: number; r: number }> = [
-  // Top-left mountain range (descending diagonal)
-  { q: 0, r: 0 }, { q: 1, r: 0 }, { q: 2, r: 0 }, { q: 3, r: 0 },
-  { q: 0, r: 1 }, { q: 1, r: 1 }, { q: 2, r: 1 },
-  { q: 0, r: 2 }, { q: 1, r: 2 },
-  { q: 0, r: 3 }, { q: 1, r: 3 },
-  { q: 0, r: 4 },
+const GRID_COLS = 15
+const GRID_ROWS = 18
+
+/** Convert visual grid position to axial coordinates */
+function toAxial(col: number, row: number): { q: number; r: number } {
+  return { q: col, r: row - Math.floor(col / 2) }
+}
+
+// Mountain hex positions in VISUAL (col, row) coordinates
+const MOUNTAIN_VISUAL: Array<{ col: number; row: number }> = [
+  // Top-left mountain range
+  { col: 0, row: 0 }, { col: 1, row: 0 }, { col: 2, row: 0 }, { col: 3, row: 0 }, { col: 4, row: 0 },
+  { col: 0, row: 1 }, { col: 1, row: 1 }, { col: 2, row: 1 }, { col: 3, row: 1 },
+  { col: 0, row: 2 }, { col: 1, row: 2 }, { col: 2, row: 2 },
+  { col: 0, row: 3 }, { col: 1, row: 3 },
+  { col: 0, row: 4 }, { col: 1, row: 4 },
+  { col: 0, row: 5 },
 
   // Bottom-left mountain range
-  { q: 0, r: 8 }, { q: 0, r: 9 },
-  { q: 0, r: 10 }, { q: 1, r: 10 },
-  { q: 0, r: 11 }, { q: 1, r: 11 }, { q: 2, r: 11 },
-  { q: 0, r: 12 }, { q: 1, r: 12 }, { q: 2, r: 12 }, { q: 3, r: 12 },
+  { col: 0, row: 12 },
+  { col: 0, row: 13 }, { col: 1, row: 13 },
+  { col: 0, row: 14 }, { col: 1, row: 14 }, { col: 2, row: 14 },
+  { col: 0, row: 15 }, { col: 1, row: 15 }, { col: 2, row: 15 }, { col: 3, row: 15 },
+  { col: 0, row: 16 }, { col: 1, row: 16 }, { col: 2, row: 16 }, { col: 3, row: 16 }, { col: 4, row: 16 },
+  { col: 0, row: 17 }, { col: 1, row: 17 }, { col: 2, row: 17 }, { col: 3, row: 17 }, { col: 4, row: 17 }, { col: 5, row: 17 },
 
-  // Bottom-right mountain range (ascending diagonal from bottom-right)
-  { q: 9, r: 6 }, { q: 9, r: 7 },
-  { q: 8, r: 7 }, { q: 9, r: 8 },
-  { q: 7, r: 8 }, { q: 8, r: 8 }, { q: 9, r: 9 },
-  { q: 6, r: 9 }, { q: 7, r: 9 }, { q: 8, r: 9 }, { q: 9, r: 10 },
-  { q: 5, r: 10 }, { q: 6, r: 10 }, { q: 7, r: 10 }, { q: 8, r: 10 }, { q: 9, r: 11 },
-  { q: 4, r: 11 }, { q: 5, r: 11 }, { q: 6, r: 11 }, { q: 7, r: 11 }, { q: 8, r: 11 }, { q: 9, r: 12 },
-  { q: 4, r: 12 }, { q: 5, r: 12 }, { q: 6, r: 12 }, { q: 7, r: 12 }, { q: 8, r: 12 },
+  // Bottom-right mountain range
+  { col: 14, row: 10 },
+  { col: 13, row: 11 }, { col: 14, row: 11 },
+  { col: 12, row: 12 }, { col: 13, row: 12 }, { col: 14, row: 12 },
+  { col: 11, row: 13 }, { col: 12, row: 13 }, { col: 13, row: 13 }, { col: 14, row: 13 },
+  { col: 10, row: 14 }, { col: 11, row: 14 }, { col: 12, row: 14 }, { col: 13, row: 14 }, { col: 14, row: 14 },
+  { col: 9, row: 15 }, { col: 10, row: 15 }, { col: 11, row: 15 }, { col: 12, row: 15 }, { col: 13, row: 15 }, { col: 14, row: 15 },
+  { col: 8, row: 16 }, { col: 9, row: 16 }, { col: 10, row: 16 }, { col: 11, row: 16 }, { col: 12, row: 16 }, { col: 13, row: 16 }, { col: 14, row: 16 },
+  { col: 6, row: 17 }, { col: 7, row: 17 }, { col: 8, row: 17 }, { col: 9, row: 17 }, { col: 10, row: 17 }, { col: 11, row: 17 }, { col: 12, row: 17 }, { col: 13, row: 17 }, { col: 14, row: 17 },
 ]
 
-// Fort positions (shield/castle icons in the interior)
-const FORT_POSITIONS: Array<{ q: number; r: number; name: string }> = [
-  { q: 2, r: 4, name: 'Fort Alpha' },
-  { q: 7, r: 2, name: 'Fort Bravo' },
-  { q: 4, r: 3, name: 'Fort Charlie' },
-  { q: 2, r: 7, name: 'Fort Delta' },
-  { q: 6, r: 5, name: 'Fort Echo' },
-  { q: 3, r: 9, name: 'Fort Foxtrot' },
-  { q: 8, r: 4, name: 'Fort Golf' },
+// Fort positions in VISUAL (col, row) coordinates
+const FORT_VISUAL: Array<{ col: number; row: number; name: string }> = [
+  { col: 4, row: 3, name: 'Fort Alpha' },
+  { col: 10, row: 2, name: 'Fort Bravo' },
+  { col: 6, row: 5, name: 'Fort Charlie' },
+  { col: 3, row: 9, name: 'Fort Delta' },
+  { col: 11, row: 7, name: 'Fort Echo' },
+  { col: 5, row: 13, name: 'Fort Foxtrot' },
+  { col: 13, row: 5, name: 'Fort Golf' },
 ]
 
-// Starting hex (circle marker near center of map)
-const STARTING_HEX = { q: 5, r: 5 }
+// Starting hex in VISUAL coordinates
+const STARTING_VISUAL = { col: 7, row: 8 }
 
 /**
  * Build the complete set of hexes for the Calosanti map.
- * Includes all grid positions within the map boundary.
+ * 15 columns x 18 rows rectangular grid, converted to axial coordinates.
  */
 function buildHexes(): MapHex[] {
   const mountainSet = new Set(
-    MOUNTAIN_HEXES.map(({ q, r }) => `${q},${r}`)
+    MOUNTAIN_VISUAL.map(({ col, row }) => {
+      const a = toAxial(col, row)
+      return `${a.q},${a.r}`
+    })
   )
   const fortSet = new Set(
-    FORT_POSITIONS.map(({ q, r }) => `${q},${r}`)
+    FORT_VISUAL.map(({ col, row }) => {
+      const a = toAxial(col, row)
+      return `${a.q},${a.r}`
+    })
   )
+  const startAxial = toAxial(STARTING_VISUAL.col, STARTING_VISUAL.row)
 
   const hexes: MapHex[] = []
 
-  for (let q = 0; q <= 9; q++) {
-    for (let r = 0; r <= 12; r++) {
+  for (let col = 0; col < GRID_COLS; col++) {
+    for (let row = 0; row < GRID_ROWS; row++) {
+      const { q, r } = toAxial(col, row)
       const key = `${q},${r}`
       const isMountain = mountainSet.has(key)
       const isFort = fortSet.has(key)
-      const isStart = q === STARTING_HEX.q && r === STARTING_HEX.r
+      const isStart = q === startAxial.q && r === startAxial.r
 
       hexes.push({
         coord: { q, r },
@@ -89,19 +106,21 @@ function buildHexes(): MapHex[] {
   return hexes
 }
 
+const startAxial = toAxial(STARTING_VISUAL.col, STARTING_VISUAL.row)
+
 export const CALOSANTI_MAP: MapDefinition = {
   id: 'calosanti',
   name: 'Calosanti Region',
   description: 'Mountain Region Series 1, Map 1. A strategic battleground bordered by treacherous mountain ranges.',
   schemaVersion: 1,
-  gridWidth: 10,
-  gridHeight: 13,
+  gridWidth: GRID_COLS,
+  gridHeight: GRID_ROWS,
   hexes: buildHexes(),
-  forts: FORT_POSITIONS.map(({ q, r, name }) => ({
-    coord: { q, r },
+  forts: FORT_VISUAL.map(({ col, row, name }) => ({
+    coord: toAxial(col, row),
     name,
   })),
-  startingHex: STARTING_HEX,
+  startingHex: startAxial,
   darkForceLimit: 25,
   orientation: 'flat-top',
 }

@@ -171,9 +171,9 @@ describe('resolveAction — placeHex', () => {
     expect(result.reason.code).toBe('SOURCE_NOT_CLAIMED')
   })
 
-  it('returns error when target hex is already occupied', () => {
+  it('places blocked hex clockwise when target is occupied', () => {
     const state = makeGameSnapshot()
-    // Add a hex in the target position
+    // Occupy the target at edge 2 (SE) — neighbor of (1,1)
     const targetCoord = getNeighborAtEdge({ q: 1, r: 1 }, 2)
     state.hexes.set(hexToKey(targetCoord), {
       coord: targetCoord,
@@ -181,17 +181,26 @@ describe('resolveAction — placeHex', () => {
       numbers: [1, 2, 3, 4, 5, 6],
     })
 
+    // Roll 3 from (1,1) — edge 2 has number 3, target is occupied
     const action: GameAction = {
       type: 'placeHex',
       sourceCoord: { q: 1, r: 1 },
-      edge: 2,
-      diceValue: 1,
+      diceValue: 3,
     }
 
     const result = resolveAction(state, action)
-    expect(result.ok).toBe(false)
-    if (result.ok) return
-    expect(result.reason.code).toBe('TARGET_OCCUPIED')
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+
+    // Source should stay claimed
+    expect(result.snapshot.hexes.get('1,1')!.status).toBe(HexStatus.Claimed)
+
+    // Next clockwise from edge 2 is edge 3. Check if a blocked hex was placed there.
+    const clockwiseCoord = getNeighborAtEdge({ q: 1, r: 1 }, 3)
+    const blockedHex = result.snapshot.hexes.get(hexToKey(clockwiseCoord))
+    expect(blockedHex).toBeDefined()
+    expect(blockedHex!.status).toBe(HexStatus.Blocked)
+    expect(blockedHex!.numbers).toBeDefined()
   })
 
   it('returns error when missing required fields', () => {

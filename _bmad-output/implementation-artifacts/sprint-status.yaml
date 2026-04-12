@@ -60,11 +60,11 @@ development_status:
 
   # Epic 3: Complete Game — Dark Force, Terrain & Victory
   epic-3: backlog
-  3-1-blocked-hexes-and-dark-force-spawning: backlog
-  3-2-dark-force-escalation-and-cascading-consequences: backlog
-  3-3-mountain-terrain-and-fort-mechanics: backlog
-  3-4-win-loss-detection-and-game-over: backlog
-  3-5-persistence-pause-and-resume: backlog
+  3-1-blocked-hexes-and-dark-force-spawning: done
+  3-2-dark-force-escalation-and-cascading-consequences: done
+  3-3-mountain-terrain-and-fort-mechanics: done
+  3-4-win-loss-detection-and-game-over: done
+  3-5-persistence-pause-and-resume: done
   epic-3-retrospective: optional
 
   # Epic 4: Undo, Override & Rules Reference
