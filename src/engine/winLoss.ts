@@ -27,7 +27,6 @@ export function checkWinLoss(snapshot: GameSnapshot): GameStatus {
   const uncapturedForts = mapDefinition.forts.filter(fort => {
     const key = hexToKey(fort.coord)
     const hexState = snapshot.hexes.get(key)
-    // Fort is uncaptured if it has no army
     if (hexState?.armies && hexState.armies.length > 0) return false
     return true
   })
@@ -39,12 +38,22 @@ export function checkWinLoss(snapshot: GameSnapshot): GameStatus {
       return hexState?.status === HexStatus.Blocked
     })
 
-    // Only lose if ALL remaining needed forts are blocked
-    // Player needs more than totalForts/2 - fortsCaptured more forts
     const fortsNeeded = Math.floor(totalForts / 2) + 1 - fortsCaptured
     if (allBlocked && fortsNeeded > 0) {
       return GameStatus.DarkForceWon
     }
+  }
+
+  // Loss: no claimed, non-blocked hexes left to roll from (stalemate)
+  let hasSelectableHex = false
+  for (const [_, hexState] of snapshot.hexes) {
+    if (hexState.status === HexStatus.Claimed) {
+      hasSelectableHex = true
+      break
+    }
+  }
+  if (!hasSelectableHex && snapshot.turnNumber > 0) {
+    return GameStatus.DarkForceWon
   }
 
   return GameStatus.InProgress

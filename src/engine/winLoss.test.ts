@@ -6,6 +6,14 @@ import { HexStatus } from '../types/hex.types'
 import { hexToKey } from './hexMath'
 
 function makeSnapshot(overrides: Partial<GameSnapshot> = {}): GameSnapshot {
+  // Default: at least one claimed hex so stalemate check doesn't trigger
+  const defaultHexes = new Map()
+  defaultHexes.set('0,0', {
+    coord: { q: 0, r: 0 },
+    status: HexStatus.Claimed,
+    numbers: [1, 2, 3, 4, 5, 6],
+  })
+
   return {
     mapId: 'test',
     mapDefinition: {
@@ -21,7 +29,7 @@ function makeSnapshot(overrides: Partial<GameSnapshot> = {}): GameSnapshot {
       ],
       startingHex: { q: 0, r: 0 }, darkForceLimit: 25, orientation: 'flat-top' as const,
     },
-    hexes: new Map(),
+    hexes: defaultHexes,
     turnNumber: 10,
     darkForceTally: 0,
     fortsCaptured: 0,
@@ -73,6 +81,12 @@ describe('checkWinLoss', () => {
 
   it('does not lose when some forts are still reachable', () => {
     const hexes = new Map()
+    // Player still has a claimed hex to roll from
+    hexes.set('0,0', {
+      coord: { q: 0, r: 0 },
+      status: HexStatus.Claimed,
+      numbers: [1, 2, 3, 4, 5, 6],
+    })
     // 3 forts blocked, 4 still unclaimed (reachable)
     for (let i = 1; i <= 3; i++) {
       hexes.set(hexToKey({ q: i, r: i }), {
