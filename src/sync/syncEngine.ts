@@ -91,18 +91,19 @@ export async function syncFromCloud(): Promise<void> {
         if (content) {
           try {
             const data = JSON.parse(content)
-            // Reconstruct hex Maps from array entries
+            // Reconstruct hex Maps from array entries (immutable)
             const snapshot = {
               ...data.snapshot,
               hexes: new Map(data.snapshot.hexes),
             }
-            for (const entry of data.turnEntries) {
-              entry.snapshot = {
+            const turnEntries = data.turnEntries.map((entry: any) => ({
+              ...entry,
+              snapshot: {
                 ...entry.snapshot,
                 hexes: new Map(entry.snapshot.hexes),
-              }
-            }
-            await archiveGame(snapshot, data.turnEntries, data.journalEntries ?? [])
+              },
+            }))
+            await archiveGame(snapshot, turnEntries, data.journalEntries ?? [])
           } catch (e) {
             console.warn(`Failed to import game ${cloudGame.id}:`, e)
           }

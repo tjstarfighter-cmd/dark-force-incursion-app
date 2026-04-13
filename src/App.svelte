@@ -23,11 +23,10 @@
   import { loadArchivedGames, loadArchivedGame } from './persistence/gameRepository'
   import { handleAuthCallback } from './sync/googleAuth'
 
-  import SettingsView from './components/settings/SettingsView.svelte'
-
-  // Lazy-load archive components (not in initial bundle)
+  // Lazy-load archive and settings components (not in initial bundle)
   let ArchiveList: any = $state(null)
   let GameDetail: any = $state(null)
+  let SettingsView: any = $state(null)
 
   const snapshot = $derived(gameState.snapshot)
   const isInitialized = $derived(gameState.isInitialized)
@@ -41,8 +40,12 @@
   let detailMetadata = $state<ArchiveMetadata | null>(null)
 
   // Handle OAuth callback first (if returning from Google auth), then resume game
-  handleAuthCallback().then(wasAuth => {
+  handleAuthCallback().then(async wasAuth => {
     if (wasAuth) {
+      if (!SettingsView) {
+        const mod = await import('./components/settings/SettingsView.svelte')
+        SettingsView = mod.default
+      }
       navigate('settings')
     }
     return tryResumeGame()
@@ -250,7 +253,11 @@
     }
   }
 
-  function handleSettingsOpen() {
+  async function handleSettingsOpen() {
+    if (!SettingsView) {
+      const mod = await import('./components/settings/SettingsView.svelte')
+      SettingsView = mod.default
+    }
     navigate('settings')
   }
 
@@ -280,8 +287,8 @@
 
 {#if !isInitialized}
   <!-- Waiting for persistence check -->
-{:else if currentView === 'settings'}
-  <SettingsView onBack={handleSettingsBack} />
+{:else if currentView === 'settings' && SettingsView}
+  <svelte:component this={SettingsView} onBack={handleSettingsBack} />
 {:else if currentView === 'gameDetail' && detailSnapshot && detailMetadata && GameDetail}
   <svelte:component this={GameDetail}
     snapshot={detailSnapshot}
