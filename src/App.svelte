@@ -1,8 +1,12 @@
 <script lang="ts">
-  import type { HexCoord, HexEdge } from './types/hex.types'
+  import type { HexCoord } from './types/hex.types'
   import { HexStatus } from './types/hex.types'
+  import type { GameSnapshot } from './types/game.types'
   import { GameStatus } from './types/game.types'
+  import type { JournalEntry } from './types/journal.types'
+  import type { ArchiveMetadata } from './persistence/gameRepository'
   import { hexToKey } from './engine/hexMath'
+  import { detectContextualRules } from './engine/rulesContext'
   import HexGrid from './components/hex-grid/HexGrid.svelte'
   import DiceInput from './components/dice/DiceInput.svelte'
   import HomeView from './components/game/HomeView.svelte'
@@ -10,21 +14,17 @@
   import StatusBar from './components/game/StatusBar.svelte'
   import ControlStrip from './components/game/ControlStrip.svelte'
   import TurnHistory from './components/game/TurnHistory.svelte'
+  import TurnSummary from './components/game/TurnSummary.svelte'
   import RulesReference from './components/rules/RulesReference.svelte'
   import JournalPanel from './components/journal/JournalPanel.svelte'
-  import { detectContextualRules } from './engine/rulesContext'
-
-  // Lazy-load archive components (not in initial bundle)
-  let ArchiveList: any = $state(null)
-  let GameDetail: any = $state(null)
-  import TurnSummary from './components/game/TurnSummary.svelte'
   import { CALOSANTI_MAP } from './maps/calosanti'
   import { startGame, dispatch, undo, rewindTo, gameState, getTurnHistory, tryResumeGame, addJournalEntry, editJournalEntry, deleteJournalEntry, getAllJournalEntries, getDraftText, setDraftText } from './stores/gameStore.svelte'
   import { getCurrentView, navigate, back } from './stores/viewStore.svelte'
   import { loadArchivedGames, loadArchivedGame } from './persistence/gameRepository'
-  import type { ArchiveMetadata } from './persistence/gameRepository'
-  import type { GameSnapshot } from './types/game.types'
-  import type { JournalEntry } from './types/journal.types'
+
+  // Lazy-load archive components (not in initial bundle)
+  let ArchiveList: any = $state(null)
+  let GameDetail: any = $state(null)
 
   const snapshot = $derived(gameState.snapshot)
   const isInitialized = $derived(gameState.isInitialized)
@@ -213,10 +213,6 @@
     showJournal = false
   }
 
-  function handleSaveJournalEntry(text: string, scope: 'turn' | 'session') {
-    addJournalEntry(text, scope)
-  }
-
   async function handleNavigateArchive() {
     archiveLoading = true
     navigate('archive')
@@ -336,7 +332,7 @@
       currentTurn={snapshot.turnNumber}
       draftText={getDraftText()}
       {isDesktop}
-      onSaveEntry={handleSaveJournalEntry}
+      onSaveEntry={addJournalEntry}
       onEditEntry={editJournalEntry}
       onDeleteEntry={deleteJournalEntry}
       onDraftChange={setDraftText}

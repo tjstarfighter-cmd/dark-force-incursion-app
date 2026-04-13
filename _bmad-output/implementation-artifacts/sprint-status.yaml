@@ -50,7 +50,7 @@ development_status:
   epic-1-retrospective: optional
 
   # Epic 2: Roll and Claim — The Core Turn Loop
-  epic-2: in-progress
+  epic-2: done
   2-1-game-state-management-and-turn-stack: done
   2-2-hex-selection-and-edge-targets: done
   2-3-dice-input-manual-and-digital: done
