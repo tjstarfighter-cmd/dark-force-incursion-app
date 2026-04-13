@@ -87,9 +87,9 @@ development_status:
   epic-6-retrospective: optional
 
   # Epic 7: PWA & Offline Experience
-  epic-7: backlog
-  7-1-pwa-configuration-and-installation: backlog
-  7-2-offline-first-and-performance: backlog
+  epic-7: done
+  7-1-pwa-configuration-and-installation: done
+  7-2-offline-first-and-performance: done
   epic-7-retrospective: optional
 
   # Epic 8: Cross-Device Sync

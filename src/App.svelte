@@ -12,9 +12,11 @@
   import TurnHistory from './components/game/TurnHistory.svelte'
   import RulesReference from './components/rules/RulesReference.svelte'
   import JournalPanel from './components/journal/JournalPanel.svelte'
-  import ArchiveList from './components/archive/ArchiveList.svelte'
-  import GameDetail from './components/archive/GameDetail.svelte'
   import { detectContextualRules } from './engine/rulesContext'
+
+  // Lazy-load archive components (not in initial bundle)
+  let ArchiveList: any = $state(null)
+  let GameDetail: any = $state(null)
   import TurnSummary from './components/game/TurnSummary.svelte'
   import { CALOSANTI_MAP } from './maps/calosanti'
   import { startGame, dispatch, undo, rewindTo, gameState, getTurnHistory, tryResumeGame, addJournalEntry, editJournalEntry, deleteJournalEntry, getAllJournalEntries, getDraftText, setDraftText } from './stores/gameStore.svelte'
@@ -218,6 +220,10 @@
   async function handleNavigateArchive() {
     archiveLoading = true
     navigate('archive')
+    if (!ArchiveList) {
+      const mod = await import('./components/archive/ArchiveList.svelte')
+      ArchiveList = mod.default
+    }
     archivedGames = await loadArchivedGames()
     archiveLoading = false
   }
@@ -227,6 +233,10 @@
   }
 
   async function handleSelectArchivedGame(id: string) {
+    if (!GameDetail) {
+      const mod = await import('./components/archive/GameDetail.svelte')
+      GameDetail = mod.default
+    }
     const data = await loadArchivedGame(id)
     if (data) {
       detailSnapshot = data.snapshot
@@ -258,18 +268,18 @@
 
 {#if !isInitialized}
   <!-- Waiting for persistence check -->
-{:else if currentView === 'gameDetail' && detailSnapshot && detailMetadata}
-  <GameDetail
+{:else if currentView === 'gameDetail' && detailSnapshot && detailMetadata && GameDetail}
+  <svelte:component this={GameDetail}
     snapshot={detailSnapshot}
     journalEntries={detailJournalEntries}
     metadata={detailMetadata}
     onBack={handleDetailBack}
   />
 {:else if currentView === 'archive'}
-  {#if archiveLoading}
+  {#if archiveLoading || !ArchiveList}
     <div style="display:flex;align-items:center;justify-content:center;min-height:100svh;background:var(--color-bg-app,#1a1a2e);color:var(--color-text-secondary,#a0a0b0);">Loading...</div>
   {:else}
-    <ArchiveList
+    <svelte:component this={ArchiveList}
       archives={archivedGames}
       onSelectGame={handleSelectArchivedGame}
       onBack={handleArchiveBack}
