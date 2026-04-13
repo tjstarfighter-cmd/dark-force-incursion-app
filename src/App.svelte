@@ -21,6 +21,9 @@
   import { startGame, dispatch, undo, rewindTo, gameState, getTurnHistory, tryResumeGame, addJournalEntry, editJournalEntry, deleteJournalEntry, getAllJournalEntries, getDraftText, setDraftText } from './stores/gameStore.svelte'
   import { getCurrentView, navigate, back } from './stores/viewStore.svelte'
   import { loadArchivedGames, loadArchivedGame } from './persistence/gameRepository'
+  import { handleAuthCallback } from './sync/googleAuth'
+
+  import SettingsView from './components/settings/SettingsView.svelte'
 
   // Lazy-load archive components (not in initial bundle)
   let ArchiveList: any = $state(null)
@@ -37,8 +40,13 @@
   let detailJournalEntries = $state<JournalEntry[]>([])
   let detailMetadata = $state<ArchiveMetadata | null>(null)
 
-  // Try to resume a saved game on app load
-  tryResumeGame()
+  // Handle OAuth callback first (if returning from Google auth), then resume game
+  handleAuthCallback().then(wasAuth => {
+    if (wasAuth) {
+      navigate('settings')
+    }
+    return tryResumeGame()
+  })
 
   // Dice input state
   let diceInputVisible = $state(false)
@@ -242,6 +250,14 @@
     }
   }
 
+  function handleSettingsOpen() {
+    navigate('settings')
+  }
+
+  function handleSettingsBack() {
+    back()
+  }
+
   function handleDetailBack() {
     detailSnapshot = null
     detailMetadata = null
@@ -264,6 +280,8 @@
 
 {#if !isInitialized}
   <!-- Waiting for persistence check -->
+{:else if currentView === 'settings'}
+  <SettingsView onBack={handleSettingsBack} />
 {:else if currentView === 'gameDetail' && detailSnapshot && detailMetadata && GameDetail}
   <svelte:component this={GameDetail}
     snapshot={detailSnapshot}
@@ -308,7 +326,7 @@
     />
   {/if}
 
-  <ControlStrip {canUndo} onUndo={handleUndo} onTurnHistoryOpen={handleTurnHistoryOpen} onRulesOpen={handleRulesOpen} onJournalOpen={handleJournalOpen} />
+  <ControlStrip {canUndo} onUndo={handleUndo} onTurnHistoryOpen={handleTurnHistoryOpen} onRulesOpen={handleRulesOpen} onJournalOpen={handleJournalOpen} onSettingsOpen={handleSettingsOpen} />
 
   {#if showTurnHistory}
     <TurnHistory

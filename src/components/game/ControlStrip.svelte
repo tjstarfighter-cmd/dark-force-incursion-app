@@ -5,9 +5,10 @@
     onTurnHistoryOpen?: () => void
     onRulesOpen?: () => void
     onJournalOpen?: () => void
+    onSettingsOpen?: () => void
   }
 
-  let { canUndo = false, onUndo, onTurnHistoryOpen, onRulesOpen, onJournalOpen }: Props = $props()
+  let { canUndo = false, onUndo, onTurnHistoryOpen, onRulesOpen, onJournalOpen, onSettingsOpen }: Props = $props()
 
   let longPressTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -48,7 +49,7 @@
   >Undo</button>
   <button class="ctrl-btn" title="Journal" onclick={() => onJournalOpen?.()}>Journal</button>
   <button class="ctrl-btn" title="Rules" onclick={() => onRulesOpen?.()}>Rules</button>
-  <button class="ctrl-btn" disabled title="Settings">Menu</button>
+  <button class="ctrl-btn" title="Settings" onclick={() => onSettingsOpen?.()}>Menu</button>
 </div>
 
 <style>

@@ -93,8 +93,8 @@ development_status:
   epic-7-retrospective: optional
 
   # Epic 8: Cross-Device Sync
-  epic-8: backlog
-  8-1-sync-configuration-and-local-only-mode: backlog
-  8-2-cloud-sync-read-and-write: backlog
-  8-3-conflict-detection-and-resolution: backlog
+  epic-8: done
+  8-1-sync-configuration-and-local-only-mode: done
+  8-2-cloud-sync-read-and-write: done
+  8-3-conflict-detection-and-resolution: done
   epic-8-retrospective: optional
