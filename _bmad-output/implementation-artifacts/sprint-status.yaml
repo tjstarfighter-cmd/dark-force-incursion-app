@@ -81,9 +81,9 @@ development_status:
   epic-5-retrospective: optional
 
   # Epic 6: Campaign Archive
-  epic-6: backlog
-  6-1-archive-save-and-campaign-list: backlog
-  6-2-game-detail-view: backlog
+  epic-6: done
+  6-1-archive-save-and-campaign-list: done
+  6-2-game-detail-view: done
   epic-6-retrospective: optional
 
   # Epic 7: PWA & Offline Experience

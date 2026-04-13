@@ -12,13 +12,28 @@
   import TurnHistory from './components/game/TurnHistory.svelte'
   import RulesReference from './components/rules/RulesReference.svelte'
   import JournalPanel from './components/journal/JournalPanel.svelte'
+  import ArchiveList from './components/archive/ArchiveList.svelte'
+  import GameDetail from './components/archive/GameDetail.svelte'
   import { detectContextualRules } from './engine/rulesContext'
   import TurnSummary from './components/game/TurnSummary.svelte'
   import { CALOSANTI_MAP } from './maps/calosanti'
   import { startGame, dispatch, undo, rewindTo, gameState, getTurnHistory, tryResumeGame, addJournalEntry, editJournalEntry, deleteJournalEntry, getAllJournalEntries, getDraftText, setDraftText } from './stores/gameStore.svelte'
+  import { getCurrentView, navigate, back } from './stores/viewStore.svelte'
+  import { loadArchivedGames, loadArchivedGame } from './persistence/gameRepository'
+  import type { ArchiveMetadata } from './persistence/gameRepository'
+  import type { GameSnapshot } from './types/game.types'
+  import type { JournalEntry } from './types/journal.types'
 
   const snapshot = $derived(gameState.snapshot)
   const isInitialized = $derived(gameState.isInitialized)
+
+  // View state
+  const currentView = $derived(getCurrentView())
+  let archivedGames = $state<ArchiveMetadata[]>([])
+  let archiveLoading = $state(false)
+  let detailSnapshot = $state<GameSnapshot | null>(null)
+  let detailJournalEntries = $state<JournalEntry[]>([])
+  let detailMetadata = $state<ArchiveMetadata | null>(null)
 
   // Try to resume a saved game on app load
   tryResumeGame()
@@ -200,6 +215,34 @@
     addJournalEntry(text, scope)
   }
 
+  async function handleNavigateArchive() {
+    archiveLoading = true
+    navigate('archive')
+    archivedGames = await loadArchivedGames()
+    archiveLoading = false
+  }
+
+  function handleArchiveBack() {
+    back()
+  }
+
+  async function handleSelectArchivedGame(id: string) {
+    const data = await loadArchivedGame(id)
+    if (data) {
+      detailSnapshot = data.snapshot
+      detailJournalEntries = data.journalEntries
+      detailMetadata = data.metadata
+      navigate('gameDetail')
+    }
+  }
+
+  function handleDetailBack() {
+    detailSnapshot = null
+    detailMetadata = null
+    detailJournalEntries = []
+    back()
+  }
+
   // Keyboard shortcut: Ctrl+Z / Cmd+Z for undo (skip when typing in inputs)
   function handleKeydown(e: KeyboardEvent) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
@@ -215,6 +258,23 @@
 
 {#if !isInitialized}
   <!-- Waiting for persistence check -->
+{:else if currentView === 'gameDetail' && detailSnapshot && detailMetadata}
+  <GameDetail
+    snapshot={detailSnapshot}
+    journalEntries={detailJournalEntries}
+    metadata={detailMetadata}
+    onBack={handleDetailBack}
+  />
+{:else if currentView === 'archive'}
+  {#if archiveLoading}
+    <div style="display:flex;align-items:center;justify-content:center;min-height:100svh;background:var(--color-bg-app,#1a1a2e);color:var(--color-text-secondary,#a0a0b0);">Loading...</div>
+  {:else}
+    <ArchiveList
+      archives={archivedGames}
+      onSelectGame={handleSelectArchivedGame}
+      onBack={handleArchiveBack}
+    />
+  {/if}
 {:else if snapshot}
   <StatusBar
     turnNumber={snapshot.turnNumber}
@@ -288,10 +348,11 @@
       totalForts={snapshot.totalForts}
       darkForceTally={snapshot.darkForceTally}
       onNewCampaign={handleStartGame}
+      onViewArchive={handleNavigateArchive}
     />
   {/if}
 {:else}
-  <HomeView onStartGame={handleStartGame} />
+  <HomeView onStartGame={handleStartGame} onViewArchive={handleNavigateArchive} />
 {/if}
 
 <style>

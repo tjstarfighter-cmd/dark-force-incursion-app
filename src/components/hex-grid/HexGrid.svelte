@@ -15,9 +15,10 @@
     hexStates?: Map<string, HexState>
     onHexSelected?: (coord: HexCoord) => void
     lastPlacedHexKey?: string | null
+    readonly?: boolean
   }
 
-  let { mapDefinition, hexStates, onHexSelected, lastPlacedHexKey = null }: Props = $props()
+  let { mapDefinition, hexStates, onHexSelected, lastPlacedHexKey = null, readonly: isReadonly = false }: Props = $props()
 
   // Rendering hex class with appropriate size
   const HEX_RADIUS = 30
@@ -219,6 +220,7 @@
   })
 
   function handleHexSelect(key: string, hexState?: HexState) {
+    if (isReadonly) return
     if (!hexState || hexState.status !== HexStatus.Claimed) {
       // Tapping non-selectable hex deselects
       selectedHexKey = null

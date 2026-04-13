@@ -8,9 +8,10 @@
     totalForts: number
     darkForceTally: number
     onNewCampaign: () => void
+    onViewArchive?: () => void
   }
 
-  let { status, turnNumber, fortsCaptured, totalForts, darkForceTally, onNewCampaign }: Props = $props()
+  let { status, turnNumber, fortsCaptured, totalForts, darkForceTally, onNewCampaign, onViewArchive }: Props = $props()
 
   const isVictory = $derived(status === GameStatus.PlayerWon)
   const title = $derived(isVictory ? 'Campaign Won' : 'Campaign Lost')
@@ -43,6 +44,9 @@
 
     <button class="new-campaign-btn" onclick={onNewCampaign}>
       New Campaign
+    </button>
+    <button class="archive-btn" onclick={() => onViewArchive?.()}>
+      View Archive
     </button>
   </div>
 </div>
@@ -126,6 +130,25 @@
   }
 
   .new-campaign-btn:active {
+    transform: scale(0.97);
+  }
+
+  .archive-btn {
+    margin-top: var(--space-sm);
+    padding: var(--space-sm) var(--space-lg);
+    background: transparent;
+    color: var(--color-text-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--border-radius-md);
+    font-family: var(--font-heading);
+    font-size: var(--text-body);
+    cursor: pointer;
+    touch-action: manipulation;
+    min-width: 200px;
+    min-height: 44px;
+  }
+
+  .archive-btn:active {
     transform: scale(0.97);
   }
 </style>

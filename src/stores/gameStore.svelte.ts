@@ -9,7 +9,7 @@ import type { TurnEntry } from '../engine/turnStack'
 import { resolveAction } from '../engine/ruleEngine'
 import { hexToKey } from '../engine/hexMath'
 import { checkWinLoss } from '../engine/winLoss'
-import { saveGame, loadActiveGame, deleteActiveGame } from '../persistence/gameRepository'
+import { saveGame, loadActiveGame, deleteActiveGame, archiveGame } from '../persistence/gameRepository'
 
 let currentGame = $state<GameSnapshot | null>(null)
 let turnStack = $state(new TurnStack())
@@ -76,6 +76,13 @@ export function dispatch(action: GameAction): { ok: boolean; reason?: string } {
 
   // Auto-save after each turn
   autoSave()
+
+  // Auto-archive if game ended
+  if (result.snapshot.status !== GameStatus.InProgress) {
+    archiveGame(result.snapshot, turnStack.getAll(), journalEntries).then(() => {
+      deleteActiveGame().catch(e => console.warn('Failed to clear active game:', e))
+    }).catch(e => console.warn('Auto-archive failed:', e))
+  }
 
   return { ok: true }
 }

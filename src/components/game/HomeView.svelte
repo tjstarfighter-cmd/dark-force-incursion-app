@@ -1,9 +1,10 @@
 <script lang="ts">
   interface Props {
     onStartGame: () => void
+    onViewArchive?: () => void
   }
 
-  let { onStartGame }: Props = $props()
+  let { onStartGame, onViewArchive }: Props = $props()
 </script>
 
 <div class="home-view">
@@ -11,6 +12,9 @@
   <p class="subtitle">Calosanti Region</p>
   <button class="start-button" onclick={onStartGame}>
     New Campaign
+  </button>
+  <button class="archive-button" onclick={() => onViewArchive?.()}>
+    Archive
   </button>
 </div>
 
@@ -57,6 +61,25 @@
   }
 
   .start-button:active {
+    transform: scale(0.97);
+  }
+
+  .archive-button {
+    margin-top: var(--space-md);
+    padding: var(--space-sm) var(--space-lg);
+    background: transparent;
+    color: var(--color-text-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--border-radius-md);
+    font-family: var(--font-heading);
+    font-size: var(--text-body);
+    cursor: pointer;
+    touch-action: manipulation;
+    min-width: 200px;
+    min-height: 44px;
+  }
+
+  .archive-button:active {
     transform: scale(0.97);
   }
 </style>

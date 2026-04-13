@@ -1,5 +1,5 @@
 import { db } from './db'
-import type { GameRecord } from './db'
+import type { GameRecord, ArchiveRecord } from './db'
 import type { GameSnapshot } from '../types/game.types'
 import { GameStatus } from '../types/game.types'
 import type { HexState } from '../types/hex.types'
@@ -99,4 +99,83 @@ export async function loadActiveGame(): Promise<{ snapshot: GameSnapshot; turnEn
  */
 export async function deleteActiveGame(): Promise<void> {
   await db.games.delete(ACTIVE_GAME_ID)
+}
+
+// --- Archive ---
+
+export interface ArchiveMetadata {
+  id: string
+  mapName: string
+  outcome: string
+  date: number
+  totalTurns: number
+  journalCount: number
+}
+
+/**
+ * Archive a completed game.
+ */
+export async function archiveGame(
+  snapshot: GameSnapshot,
+  turnEntries: TurnEntry[],
+  journalEntries: JournalEntry[],
+): Promise<string> {
+  const id = crypto.randomUUID()
+  const record: ArchiveRecord = {
+    id,
+    mapId: snapshot.mapId,
+    mapName: snapshot.mapDefinition.name,
+    outcome: snapshot.status,
+    date: Date.now(),
+    totalTurns: snapshot.turnNumber,
+    journalCount: journalEntries.length,
+    snapshotJson: serializeSnapshot(snapshot),
+    turnStackJson: serializeTurnStack(turnEntries),
+    journalEntriesJson: JSON.stringify(journalEntries),
+  }
+  await db.archivedGames.put(record)
+  return id
+}
+
+/**
+ * Load all archived games (metadata only, no heavy JSON).
+ * Sorted by date descending (most recent first).
+ */
+export async function loadArchivedGames(): Promise<ArchiveMetadata[]> {
+  const records = await db.archivedGames.orderBy('date').reverse().toArray()
+  return records.map(r => ({
+    id: r.id,
+    mapName: r.mapName,
+    outcome: r.outcome,
+    date: r.date,
+    totalTurns: r.totalTurns,
+    journalCount: r.journalCount,
+  }))
+}
+
+/**
+ * Load a single archived game with full data.
+ */
+export async function loadArchivedGame(id: string): Promise<{
+  snapshot: GameSnapshot
+  turnEntries: TurnEntry[]
+  journalEntries: JournalEntry[]
+  metadata: ArchiveMetadata
+} | null> {
+  const record = await db.archivedGames.get(id)
+  if (!record) return null
+
+  return {
+    snapshot: deserializeSnapshot(record.snapshotJson),
+    turnEntries: deserializeTurnStack(record.turnStackJson),
+    journalEntries: JSON.parse(record.journalEntriesJson),
+    metadata: {
+      id: record.id,
+      mapName: record.mapName,
+      outcome: record.outcome,
+      date: record.date,
+      totalTurns: record.totalTurns,
+      journalCount: record.journalCount,
+    },
+  }
 }
