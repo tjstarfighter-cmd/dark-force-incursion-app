@@ -11,11 +11,14 @@
   let { canUndo = false, onUndo, onTurnHistoryOpen, onRulesOpen, onJournalOpen, onSettingsOpen }: Props = $props()
 
   let longPressTimer: ReturnType<typeof setTimeout> | null = null
+  let longPressTriggered = false
 
   function handleUndoPointerDown() {
     if (!canUndo) return
+    longPressTriggered = false
     longPressTimer = setTimeout(() => {
       longPressTimer = null
+      longPressTriggered = true
       onTurnHistoryOpen?.()
     }, 500)
   }
@@ -24,7 +27,6 @@
     if (longPressTimer !== null) {
       clearTimeout(longPressTimer)
       longPressTimer = null
-      onUndo?.()
     }
   }
 
@@ -34,6 +36,11 @@
       longPressTimer = null
     }
   }
+
+  function handleUndoClick() {
+    if (!canUndo || longPressTriggered) return
+    onUndo?.()
+  }
 </script>
 
 <div class="control-strip">
@@ -42,6 +49,7 @@
     class:disabled={!canUndo}
     aria-disabled={!canUndo}
     title="Undo"
+    onclick={handleUndoClick}
     onpointerdown={handleUndoPointerDown}
     onpointerup={handleUndoPointerUp}
     onpointerleave={handleUndoPointerLeave}
