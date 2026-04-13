@@ -2,7 +2,7 @@
   "name": "Dark Force Incursion",
   "short_name": "DFI",
   "description": "Companion app for the Dark Force Incursion tabletop game",
-  "start_url": "/",
+  "start_url": "/dark-force-incursion-app/",
   "display": "standalone",
   "theme_color": "#1a1a2e",
   "background_color": "#1a1a2e",
